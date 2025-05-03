@@ -62,6 +62,7 @@ class AddHouseholdForm(QDialog):
         
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
+        main_layout.addStretch()
         main_layout.addWidget(self.addbar)
     
     def set_fields(self, **kargs):
@@ -92,6 +93,7 @@ class UpdateHouseholdForm(QDialog):
         
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
+        main_layout.addStretch()
         main_layout.addWidget(self.updatebar)
     
     def set_fields(self, **kargs):
@@ -109,3 +111,29 @@ class UpdateHouseholdForm(QDialog):
             'sitio': self.form.cbSitio.currentText(),
             'landmark': self.form.tbLandmark.text()
         }
+    
+class BrowseHouseholdForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel('Browse Household')
+        self.form = HouseholdForm()
+        
+        self.form.tbHouseholdName.setReadOnly(True)
+        self.form.tbHouseNo.setReadOnly(True)
+        self.form.tbStreet.setReadOnly(True)
+        self.form.cbSitio.setDisabled(True)
+        self.form.tbLandmark.setReadOnly(True)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+    
+    def set_fields(self, **kargs):
+        self.form.tbHouseholdName.setText(kargs['household_name'])
+        self.form.tbHouseNo.setText(kargs['house_no'])
+        self.form.tbStreet.setText(kargs['street'])
+        self.form.cbSitio.setCurrentText(kargs['sitio'])
+        self.form.tbLandmark.setText(kargs['landmark'])

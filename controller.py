@@ -1,9 +1,10 @@
 from base import Database
 from model import Household, Resident, User, Blotter
-from forms import AddHouseholdForm, UpdateHouseholdForm
+from forms import AddHouseholdForm, UpdateHouseholdForm, BrowseHouseholdForm
 from view import  BrimaView
 from widgets import BaseWindow
 from PySide6.QtWidgets import QMessageBox, QDialog
+from sqlalchemy import or_, and_
 
 
 class MainController:
@@ -12,7 +13,10 @@ class MainController:
         self.session = self.db.get_session()
         self.view = view
         self.household_control = HouseholdWindowController(self.view.household_window)
+        self.resident_control = ResidentWindowController(self.view.resident_window)
         
+        self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
+        self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -44,40 +48,49 @@ class HouseholdWindowController:
         self.view.load_table(['id', 'Household Name', 'Address'], data)
     
     def search(self):
-            search_text = self.view.get_search_text().lower()  # Get the search text and convert to lowercase
-            search_terms = search_text.split()  # Split search text by spaces into separate terms
+        search_text = self.view.get_search_text().lower()  
+        search_terms = search_text.split() 
         
-            # Start the query
-            query = self.session.query(Household).order_by(Household.household_name)
-            
-            # Apply filters for each search term
+        # Base query
+        query = self.session.query(Household)
+        
+        # Apply AND of ORs: each term must match one of the fields
+        if search_terms:
+            conditions = []
             for term in search_terms:
-                query = query.filter(
-                    Household.household_name.ilike(f"%{term}%") |  # Search by household name
-                    Household.house_no.ilike(f"%{term}%") |       # Search by house number
-                    Household.street.ilike(f"%{term}%") |         # Search by street
-                    Household.sitio.ilike(f"%{term}%") |           # Search by sitio
-                    Household.landmark.ilike(f"%{term}%")         # Search by landmark
+                term_filter = or_(
+                    Household.household_name.ilike(f"%{term}%"),
+                    Household.house_no.ilike(f"%{term}%"),
+                    Household.street.ilike(f"%{term}%"),
+                    Household.sitio.ilike(f"%{term}%"),
+                    Household.landmark.ilike(f"%{term}%")
                 )
+                conditions.append(term_filter)
             
-            # Execute the query
-            households = query.all()
+            query = query.filter(and_(*conditions))
+        
+        # Order and execute
+        households = query.order_by(Household.household_name).all()
+        
+        data = []
+        for household in households:
+            address = " ".join(filter(None, [
+                household.house_no,
+                household.street,
+                household.sitio,
+                household.landmark
+            ]))
             
-            # Prepare the data to display in the table
-            data = []
-            for household in households:
-                result = [
-                    household.id,
-                    household.household_name,
-                    f"{household.house_no} {household.street} {household.sitio} {household.landmark}"
-                ]
-                data.append(result)
-            
-            # Load the filtered data into the table
-            self.view.load_table(['id', 'Household Name', 'Address'], data)
+            result = [
+                household.id,
+                household.household_name,
+                address
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Household Name', 'Address'], data)
     
     def add(self):
-            # Create and show the add household form
             add_form = AddHouseholdForm()
             add_form.addbar.btAdd.clicked.connect(add_form.accept)
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
@@ -86,19 +99,16 @@ class HouseholdWindowController:
             if add_form.exec() == QDialog.Accepted:
                 # Get the data from the form
                 data = add_form.get_fields()
+                data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
                 
-                # Create a new Household object with the data
                 new_household = Household(**data)
                 
-                # Add to the session and commit to the database
                 try:
                     self.session.add(new_household)
                     self.session.commit()
                     
-                    # Refresh the view with the updated data
                     self.refresh()
                 except Exception as e:
-                    # Handle any database errors (e.g., unique constraints)
                     self.session.rollback()
                     QMessageBox.critical(self.view, "Error", f"Failed to add household: {str(e)}")
 
@@ -106,14 +116,11 @@ class HouseholdWindowController:
     def edit(self):
         row_id = self.view.get_table_row()
         if row_id:
-            # Query the selected household from the database
             household = self.session.query(Household).get(row_id)
             
             if household:
-                # Create and show the update form
                 update_form = UpdateHouseholdForm()
                 
-                # Populate the form with the current data
                 update_form.set_fields(
                     household_name=household.household_name,
                     house_no=household.house_no,
@@ -122,7 +129,6 @@ class HouseholdWindowController:
                     landmark=household.landmark
                 )
                 
-                # Connect the revert button to reset fields to original values
                 update_form.updatebar.btRevert.clicked.connect(
                     lambda: update_form.set_fields(
                         household_name=household.household_name,
@@ -133,43 +139,50 @@ class HouseholdWindowController:
                     )
                 )
                 
-                # Connect the update button to accept the form and save changes
                 update_form.updatebar.btUpdate.clicked.connect(
                     lambda: self.save_update(household, update_form)
                 )
                 
-                # Connect the cancel button to reject and close the form without saving
                 update_form.updatebar.btCancel.clicked.connect(update_form.reject)
                 
-                # Show the form and wait for the result (Accepted or Rejected)
                 if update_form.exec() == QDialog.Accepted:
-                    # The form was accepted, you might want to refresh the view
                     self.refresh()
     
     def save_update(self, household, update_form):
-        # Get the updated data from the form
         updated_data = update_form.get_fields()
         
-        # Update the household object with the new data
         household.household_name = updated_data['household_name']
         household.house_no = updated_data['house_no']
         household.street = updated_data['street']
         household.sitio = updated_data['sitio']
         household.landmark = updated_data['landmark']
         
-        # Commit the changes to the database
         try:
             self.session.commit()
             QMessageBox.information(self.view, "Success", "Household updated successfully!")
         except Exception as e:
-            self.session.rollback()  # Rollback in case of error
+            self.session.rollback()  
             QMessageBox.critical(self.view, "Error", f"Failed to update household: {str(e)}")
         
-        # Close the form after updating
         update_form.accept()   
         
     def browse(self):
-        pass
+        row_id = self.view.get_table_row()
+        if row_id:
+            household = self.session.query(Household).get(row_id)
+            
+            if household:
+                browse_form = BrowseHouseholdForm()
+                
+                browse_form.set_fields(
+                    household_name=household.household_name,
+                    house_no=household.house_no,
+                    street=household.street,
+                    sitio=household.sitio,
+                    landmark=household.landmark
+                )
+                
+                browse_form.exec()
         
     
     def delete(self):
@@ -189,3 +202,225 @@ class HouseholdWindowController:
                     self.session.delete(household)
                     self.session.commit()
                     self.refresh()
+
+class ResidentWindowController:
+    def __init__(self, view: BaseWindow):
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.view = view
+        self.refresh()
+        
+        self.view.btRefresh.clicked.connect(self.refresh)
+        self.view.btSearch.clicked.connect(self.search)
+        self.view.tbSearchBar.returnPressed.connect(self.search)
+        self.view.btAdd.clicked.connect(self.add)
+        self.view.btEdit.clicked.connect(self.edit)
+        self.view.btDelete.clicked.connect(self.delete)
+        self.view.btBrowse.clicked.connect(self.browse)
+        
+    def refresh(self):
+        self.view.set_search_text('')
+        residents = self.session.query(Resident).order_by(Resident.last_name, Resident.household_id).all()
+        data = []
+        for resident in residents:
+            full_name = " ".join(filter(None, [resident.first_name, resident.middle_name, resident.suffix]))
+            full_name = f"{resident.last_name}, {full_name}".strip()
+    
+            household = resident.household
+            household_name = household.household_name if household else "N/A"
+            address_parts = [
+                getattr(household, "house_no", ""),
+                getattr(household, "street", ""),
+                getattr(household, "sitio", ""),
+                getattr(household, "landmark", "")
+            ] if household else []
+    
+            address = " ".join(filter(None, address_parts))
+    
+            result = [
+                resident.id,
+                full_name,
+                resident.role,
+                household_name,
+                address
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+    
+    def search(self):
+        search_text = self.view.get_search_text().lower()
+        search_terms = search_text.split()
+    
+        # Start with base query and join household
+        query = self.session.query(Resident).join(Resident.household)
+    
+        # Apply search filters
+        if search_terms:
+            conditions = []
+            for term in search_terms:
+                term_filter = or_(
+                    Resident.first_name.ilike(f"%{term}%"),
+                    Resident.middle_name.ilike(f"%{term}%"),
+                    Resident.last_name.ilike(f"%{term}%"),
+                    Resident.suffix.ilike(f"%{term}%"),
+                    Resident.role.ilike(f"%{term}%"),
+                    Household.household_name.ilike(f"%{term}%"),
+                    Household.house_no.ilike(f"%{term}%"),
+                    Household.street.ilike(f"%{term}%"),
+                    Household.sitio.ilike(f"%{term}%"),
+                    Household.landmark.ilike(f"%{term}%")
+                )
+                conditions.append(term_filter)
+            
+            query = query.filter(and_(*conditions))
+    
+        # Apply sorting
+        residents = query.order_by(Resident.last_name, Resident.household_id).all()
+    
+        # Format results
+        data = []
+        for resident in residents:
+            full_name = " ".join(filter(None, [
+                resident.first_name,
+                resident.middle_name,
+                resident.suffix
+            ]))
+            full_name = f"{resident.last_name}, {full_name}".strip()
+    
+            household = resident.household
+            household_name = household.household_name if household else "N/A"
+            address_parts = [
+                getattr(household, "house_no", ""),
+                getattr(household, "street", ""),
+                getattr(household, "sitio", ""),
+                getattr(household, "landmark", "")
+            ] if household else []
+    
+            address = " ".join(filter(None, address_parts))
+    
+            result = [
+                resident.id,
+                full_name,
+                resident.role,
+                household_name,
+                address
+            ]
+            data.append(result)
+    
+        # Load into the view
+        self.view.load_table(['id', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+    
+    def add(self):
+            add_form = AddHouseholdForm()
+            add_form.addbar.btAdd.clicked.connect(add_form.accept)
+            add_form.addbar.btCancel.clicked.connect(add_form.reject)
+            
+            # Execute the form as a modal dialog
+            if add_form.exec() == QDialog.Accepted:
+                # Get the data from the form
+                data = add_form.get_fields()
+                data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
+                
+                new_household = Household(**data)
+                
+                try:
+                    self.session.add(new_household)
+                    self.session.commit()
+                    
+                    self.refresh()
+                except Exception as e:
+                    self.session.rollback()
+                    QMessageBox.critical(self.view, "Error", f"Failed to add household: {str(e)}")
+
+    
+    def edit(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            household = self.session.query(Household).get(row_id)
+            
+            if household:
+                update_form = UpdateHouseholdForm()
+                
+                update_form.set_fields(
+                    household_name=household.household_name,
+                    house_no=household.house_no,
+                    street=household.street,
+                    sitio=household.sitio,
+                    landmark=household.landmark
+                )
+                
+                update_form.updatebar.btRevert.clicked.connect(
+                    lambda: update_form.set_fields(
+                        household_name=household.household_name,
+                        house_no=household.house_no,
+                        street=household.street,
+                        sitio=household.sitio,
+                        landmark=household.landmark
+                    )
+                )
+                
+                update_form.updatebar.btUpdate.clicked.connect(
+                    lambda: self.save_update(household, update_form)
+                )
+                
+                update_form.updatebar.btCancel.clicked.connect(update_form.reject)
+                
+                if update_form.exec() == QDialog.Accepted:
+                    self.refresh()
+    
+    def save_update(self, household, update_form):
+        updated_data = update_form.get_fields()
+        
+        household.household_name = updated_data['household_name']
+        household.house_no = updated_data['house_no']
+        household.street = updated_data['street']
+        household.sitio = updated_data['sitio']
+        household.landmark = updated_data['landmark']
+        
+        try:
+            self.session.commit()
+            QMessageBox.information(self.view, "Success", "Household updated successfully!")
+        except Exception as e:
+            self.session.rollback()  
+            QMessageBox.critical(self.view, "Error", f"Failed to update household: {str(e)}")
+        
+        update_form.accept()   
+        
+    def browse(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            household = self.session.query(Household).get(row_id)
+            
+            if household:
+                browse_form = BrowseHouseholdForm()
+                
+                browse_form.set_fields(
+                    household_name=household.household_name,
+                    house_no=household.house_no,
+                    street=household.street,
+                    sitio=household.sitio,
+                    landmark=household.landmark
+                )
+                
+                browse_form.exec()
+        
+    
+    def delete(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            resident = self.session.query(Resident).get(row_id)
+            if resident:
+                reply = QMessageBox.question(
+                    self.view, 
+                    "Confirm Deletion",
+                    f"Are you sure you want to delete {resident.last_name}, {resident.first_name} {resident.middle_name} {resident.suffix}?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+    
+                if reply == QMessageBox.Yes:
+                    self.session.delete(resident)
+                    self.session.commit()
+                    self.refresh()
+        
