@@ -1,6 +1,7 @@
-from PySide6.QtWidgets import QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QLabel, QTableWidgetItem
+from PySide6.QtWidgets import (QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QLineEdit, QLabel, QTableWidgetItem, QHeaderView)
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Qt
 
 class BaseWindow(QWidget):
     def __init__(self, title):
@@ -44,6 +45,7 @@ class BaseWindow(QWidget):
         top_bar_layout.addWidget(self.btDelete)
         top_bar_layout.addWidget(self.btBrowse)
         top_bar_layout.addWidget(self.btRefresh)
+        top_bar_layout.addStretch()
         
         main_layout.addWidget(top_bar)
         
@@ -66,25 +68,38 @@ class BaseWindow(QWidget):
         self.table = QTableWidget()
         self.table.setObjectName('table')
         
-        self.table.horizontalHeader().setVisible(False)
+        self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         
         main_layout.addWidget(self.table)
         
     def load_table(self, headers, data):
+        self.table.clearContents()
+        self.table.setRowCount(len(data))
         self.table.setColumnCount(len(headers))
         self.table.setColumnHidden(0, True)
-        
+        self.table.setHorizontalHeaderLabels(headers)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setStretchLastSection(True)
 
+        if not data:
+            return
+        
+        for row, row_data in enumerate(data):
+            for col, col_data in enumerate(row_data):
+                item = QTableWidgetItem(str(col_data))
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, col, item)
     
     def get_table_row(self):
-        pass
+        selected_row = self.table.currentRow()
+        return int(self.table.item(selected_row, 0).text())
         
     def get_search_text(self):
-        pass
+        return self.tbSearchBar.text()
     
     def set_search_text(self, text):
-        pass
+        self.tbSearchBar.setText(text)
     
     

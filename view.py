@@ -1,9 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QStackedWidget, QFormLayout, QHBoxLayout, QVBoxLayout,
                                QLabel, QLineEdit, QComboBox, QDateEdit, QPushButton, QTableWidget, QTableWidgetItem)
-
 from widgets import BaseWindow
-
-
 
 class BrimaView(QWidget):
     def __init__(self):
@@ -57,6 +54,8 @@ class BrimaView(QWidget):
         self.btAdmin.setObjectName('btAdmin')
         self.btSettings = QPushButton('Settings')
         self.btSettings.setObjectName('btSettings')
+        self.btLogout = QPushButton('Logout')
+        self.btLogout.setObjectName('btLogout')
 
         sidebar_layout.addWidget(self.btDashboard)
         sidebar_layout.addWidget(self.btAboutUs)
@@ -64,9 +63,10 @@ class BrimaView(QWidget):
         sidebar_layout.addWidget(self.btResident)
         sidebar_layout.addWidget(self.btBlotter)
         sidebar_layout.addWidget(self.btCertificate)
-        sidebar_layout.addStretch()
         sidebar_layout.addWidget(self.btAdmin)
+        sidebar_layout.addStretch()
         sidebar_layout.addWidget(self.btSettings)
+        sidebar_layout.addWidget(self.btLogout)
 
         content_layout.addWidget(sidebar)
 
