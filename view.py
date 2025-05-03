@@ -1,5 +1,9 @@
 from PySide6.QtWidgets import (QWidget, QStackedWidget, QFormLayout, QHBoxLayout, QVBoxLayout,
-                               QLabel, QLineEdit, QComboBox, QDateEdit, QPushButton, QTableWidget, QWidgetItem) 
+                               QLabel, QLineEdit, QComboBox, QDateEdit, QPushButton, QTableWidget, QTableWidgetItem)
+
+from widgets import BaseWindow
+
+
 
 class BrimaView(QWidget):
     def __init__(self):
@@ -69,38 +73,12 @@ class BrimaView(QWidget):
         # ---Windows Stack---
         self.stack = QStackedWidget()
         self.stack.setObjectName('stack')
-
-        # TODO: ---Dashboard Window---
-        self.wdDashboard = QWidget()
-        self.wdDashboard.setObjectName('wdDashboard')
-
-        # TODO: ---About Us Window---
-        self.wdAboutUs = QWidget()
-        self.wdAboutUs.setObjectName('wdAboutUs')
-        # ---Household Windows---
         
-        # Main Window
-        self.wdHousehold = QWidget()
-        self.wdHousehold.setObjectName('wdHousehold')
-        wdHousehold_layout = QVBoxLayout(self.wdHousehold)
-
-        self.lbHouseholdTitle = QLabel('Households')
-        self.lbHouseholdTitle.setObjectName('lbHouseholdTitle')
-
-        searchbar = QWidget()
-        searchbar.setObjectName('searchbar')
-        searchbar_layout = QHBoxLayout(searchbar)
-
-
-
-
-
-        # Add Window
-
-
-        # Edit Window
-
-        # View Window
+        self.household_window = BaseWindow("Household")
+        self.stack.addWidget(self.household_window)
+        
+        self.resident_window = BaseWindow("Resident")
+        self.stack.addWidget(self.resident_window)
 
         content_layout.addWidget(self.stack)
 

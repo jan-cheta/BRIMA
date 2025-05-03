@@ -1,5 +1,6 @@
 from view import BrimaView
 from PySide6.QtWidgets import QApplication
+from resources_rc import *
 import sys
 
 
