@@ -1,6 +1,6 @@
 from base import Database
 from model import Household, Resident, User, Blotter
-from forms import (AddHouseholdForm, AddResidentForm,
+from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm)
 from view import  BrimaView
 from widgets import BaseWindow
@@ -374,7 +374,7 @@ class ResidentWindowController:
             self.session.rollback()
             QMessageBox.critical(self.view, "Error", f"Failed to add resident: {str(e)}")
     
-    def autofill_household(self, data, view: AddResidentForm | UpdateResidentForm):
+    def autofill_household(self, data, view):
         id = data[view.form.cbHousehold.currentText()]
         
         if id:
@@ -506,18 +506,36 @@ class ResidentWindowController:
     def browse(self):
         row_id = self.view.get_table_row()
         if row_id:
-            household = self.session.query(Household).get(row_id)
+            resident = self.session.query(Resident).get(row_id)
             
-            if household:
-                browse_form = BrowseHouseholdForm()
+            if resident:
+                browse_form = BrowseResidentForm()
                 
                 browse_form.set_fields(
-                    household_name=household.household_name,
-                    house_no=household.house_no,
-                    street=household.street,
-                    sitio=household.sitio,
-                    landmark=household.landmark
+                    first_name=resident.first_name,
+                    last_name=resident.last_name,
+                    middle_name=resident.middle_name,
+                    suffix=resident.suffix,
+                    date_of_birth=resident.date_of_birth,
+                    phone1=resident.phone1,
+                    phone2=resident.phone2,
+                    email=resident.email,
+                    household=resident.household.household_name if resident.household else '',
+                    occupation=resident.occupation,
+                    civil_status=resident.civil_status,
+                    education=resident.education,
+                    remarks=resident.remarks,
+                    sex=resident.sex,
+                    role=resident.role,
                 )
+                
+                households = self.session.query(Household).order_by(Household.household_name).all()
+                household_dict = {household.household_name: household.id for household in households}
+                household_names = list(household_dict.keys())
+    
+                # Populate household combo box
+                browse_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
+                self.autofill_household(household_dict, browse_form)
                 
                 browse_form.exec()
         

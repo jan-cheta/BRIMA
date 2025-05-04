@@ -79,6 +79,9 @@ class BrimaView(QWidget):
         
         self.resident_window = BaseWindow("Resident")
         self.stack.addWidget(self.resident_window)
+        
+        self.admin_window = BaseWindow("Admin")
+        self.stack.addWidget(self.admin_window)
 
         content_layout.addWidget(self.stack)
 

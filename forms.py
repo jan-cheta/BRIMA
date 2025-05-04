@@ -331,3 +331,60 @@ class UpdateResidentForm(QDialog):
             'remarks': self.form.tbRemarks.text(),
             'role': self.form.cbRole.currentText()
         }
+
+class BrowseResidentForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel('Browse Resident')
+        self.form = ResidentForm()
+        
+        self.form.tbFirstName.setReadOnly(True)
+        self.form.tbLastName.setReadOnly(True)
+        self.form.tbMiddleName.setReadOnly(True)
+        self.form.tbSuffix.setReadOnly(True)
+        self.form.tbBirthDate.setReadOnly(True)
+        self.form.tbPhone1.setReadOnly(True)
+        self.form.tbPhone2.setReadOnly(True)
+        self.form.tbEmail.setReadOnly(True)
+        self.form.cbHousehold.setDisabled(True)
+        self.form.tbOccupation.setReadOnly(True)
+        self.form.tbCivilStatus.setReadOnly(True)
+        self.form.cbSex.setDisabled(True)
+        self.form.tbEducation.setReadOnly(True)
+        self.form.tbRemarks.setReadOnly(True)
+        self.form.cbRole.setDisabled(True)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        
+    def set_fields(self, **kargs):
+        self.form.tbFirstName.setText(kargs.get('first_name', ''))
+        self.form.tbLastName.setText(kargs.get('last_name', ''))
+        self.form.tbMiddleName.setText(kargs.get('middle_name', ''))
+        self.form.tbSuffix.setText(kargs.get('suffix', ''))
+        
+        date_of_birth = kargs.get('date_of_birth', None)
+        
+        # If date_of_birth exists and is a date object, convert it to QDate
+        if isinstance(date_of_birth, date):
+            # Extract year, month, and day from the date object
+            qdate_of_birth = QDate(date_of_birth.year, date_of_birth.month, date_of_birth.day)
+        else:
+            # Default to current date if no valid date is found
+            qdate_of_birth = QDate.currentDate()
+        
+        # Set the value in the QDateEdit widget
+        self.form.tbBirthDate.setDate(qdate_of_birth)
+        self.form.tbPhone1.setText(kargs.get('phone1', ''))
+        self.form.tbPhone2.setText(kargs.get('phone2', ''))
+        self.form.tbEmail.setText(kargs.get('email', ''))
+        self.form.cbHousehold.setCurrentText(kargs.get('household', ''))
+        self.form.tbOccupation.setText(kargs.get('occupation', ''))
+        self.form.tbCivilStatus.setText(kargs.get('civil_status', ''))
+        self.form.cbSex.setCurrentText(kargs.get('sex', ''))
+        self.form.tbEducation.setText(kargs.get('education', ''))
+        self.form.tbRemarks.setText(kargs.get('remarks', ''))
+        self.form.cbRole.setCurrentText(kargs.get('role', ''))
