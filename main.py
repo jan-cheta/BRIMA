@@ -1,7 +1,8 @@
 from view import BrimaView
-from controller import HouseholdWindowController, MainController
+from controller import HouseholdWindowController, MainController, ResidentWindowController
 from PySide6.QtWidgets import QApplication
 from resources_rc import *
+from forms import ResidentForm
 import sys
 
 

@@ -15,7 +15,7 @@ class Resident(BaseModel):
     last_name = Column(String)
     middle_name = Column(String)
     suffix = Column(String)
-    data_of_birth = Column(Date)
+    date_of_birth = Column(Date)
     occupation = Column(String)
     civil_status = Column(String)
     citizenship = Column(String)
