@@ -15,9 +15,11 @@ class MainController:
         self.view = view
         self.household_control = HouseholdWindowController(self.view.household_window)
         self.resident_control = ResidentWindowController(self.view.resident_window)
+        self.user_control = UserWindowController(self.view.admin_window)
         
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
+        self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -574,7 +576,32 @@ class UserWindowController:
         self.view.btBrowse.clicked.connect(self.browse)
     
     def refresh(self):
-        pass
+        self.view.set_search_text('')
+        users = self.session.query(User).order_by(User.username).all()
+        data = []
+        for user in users:
+            
+            username = user.username
+            position = user.position
+            resident = user.resident
+            resident_name = [
+                getattr(resident, "first_name", ""),
+                getattr(resident, "middle_name", ""),
+                getattr(resident, "last_name", ""),
+                getattr(resident, "suffix", "")
+            ] if resident else []
+    
+            full_name = " ".join(filter(None, resident_name))
+    
+            result = [
+                user.id,
+                full_name,
+                username,
+                position,
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Full Name', 'Username', 'Position'], data)
         
     def search(self):
         pass
