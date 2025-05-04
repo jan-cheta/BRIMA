@@ -557,4 +557,36 @@ class ResidentWindowController:
                     self.session.delete(resident)
                     self.session.commit()
                     self.refresh()
+
+class UserWindowController:
+    def __init__(self, view: BaseWindow):
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.view = view
+        self.refresh()
         
+        self.view.btRefresh.clicked.connect(self.refresh)
+        self.view.btSearch.clicked.connect(self.search)
+        self.view.tbSearchBar.returnPressed.connect(self.search)
+        self.view.btAdd.clicked.connect(self.add)
+        self.view.btEdit.clicked.connect(self.edit)
+        self.view.btDelete.clicked.connect(self.delete)
+        self.view.btBrowse.clicked.connect(self.browse)
+    
+    def refresh(self):
+        pass
+        
+    def search(self):
+        pass
+    
+    def add(self):
+        pass
+    
+    def edit(self):
+        pass
+    
+    def delete(self):
+        pass
+    
+    def browse(self):
+        pass

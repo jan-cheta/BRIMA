@@ -29,6 +29,7 @@ class Resident(BaseModel):
     household_id = Column(ForeignKey("households.id"))
     
     household = relationship("Household", back_populates="residents")
+    user = relationship("User", back_populates='resident')
 
 
 class Household(BaseModel):
@@ -47,6 +48,9 @@ class User(BaseModel):
     username = Column(String, unique=True)
     password = Column(String)
     position = Column(String)
+    resident_id = Column(ForeignKey("residents.id"), unique=True)
+    
+    resident = relationship("Resident", back_populates='user', uselist=False)
 
 class Blotter(BaseModel):
     __tablename__ = "blotters"

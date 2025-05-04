@@ -1,12 +1,11 @@
 from datetime import date
 from faker import Faker
 from base import Database
-from model import Resident, Household
+from model import Resident, Household, User
 
 # Initialize Faker
 fake = Faker("en_PH")  # Philippine locale
 
-# Phone number generator (remains numeric, so no uppercasing needed)
 def generate_ph_mobile():
     return fake.numerify("09#########")
 
@@ -16,8 +15,9 @@ session = db.get_session()
 
 sitios = ["Sitio Uno", "Sitio Dos", "Sitio Tres", "Purok 4", "Zone 5"]
 landmarks = ["Near Barangay Hall", "Beside Elementary School", "Behind Chapel", "Near Basketball Court"]
+positions = ["Captain", "Secretary", "Treasurer", "Kagawad", "Tanod"]
 
-# Create 20 households with 2 residents each
+# Create 20 households with 2 residents each; one resident gets a User
 for i in range(20):
     household = Household(
         household_name=f"FAMILY OF {fake.last_name().upper()}",
@@ -48,6 +48,17 @@ for i in range(20):
             email=fake.email().upper(),
         )
         resident.household = household
+
+        # Only create a user account for the first resident in each household
+        if j == 0:
+            username = f"{resident.first_name.lower()}{resident.last_name.lower()}{fake.random_int(100, 999)}"
+            user = User(
+                username=username,
+                password="password123",  # In production, always hash passwords!
+                position=fake.random_element(positions),
+                resident=resident
+            )
+            session.add(user)
 
     session.add(household)
 
