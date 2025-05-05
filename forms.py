@@ -454,9 +454,12 @@ class BrowseResidentForm(QDialog):
         
 class UserForm(QWidget):
     def __init__(self):
+        super().__init__()
+        
         main_layout = QFormLayout(self)
         
         self.cbName = QComboBox()
+        self.cbName.setEditable(True)
         completer = self.cbName.completer()
         completer.setFilterMode(Qt.MatchContains)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -466,6 +469,7 @@ class UserForm(QWidget):
         
         self.tbUserName = QLineEdit()
         self.tbPassword = QLineEdit()
+        self.tbConfirmPassword = QLineEdit()
         self.tbPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.cbPosition = QComboBox()
         self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"])
@@ -473,6 +477,7 @@ class UserForm(QWidget):
         main_layout.addRow('Name:', self.cbName)
         main_layout.addRow('User Name:', self.tbUserName)
         main_layout.addRow('Password:', self.tbPassword)
+        main_layout.addRow('Confirm Password', self.tbConfirmPassword)
         main_layout.addRow('Position:', self.cbPosition)
 
 class AddUserForm(QDialog):
@@ -498,5 +503,5 @@ class AddUserForm(QDialog):
             'name' : self.form.cbName.currentText(),
             'username' : self.form.tbUserName.text(),
             'password' : self.form.tbPassword.text(),
-            'postion' : self.form.cbPosition.currentText()
+            'position' : self.form.cbPosition.currentText()
         }
