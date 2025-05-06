@@ -1,6 +1,7 @@
 from datetime import date
-from PySide6.QtWidgets import (QDialog, QGroupBox, QWidget, QHBoxLayout, QVBoxLayout,QFormLayout , QLineEdit,
-    QDateEdit, QComboBox, QPushButton, QMessageBox, QLabel, QCompleter, QTableWidget, QTableWidgetItem, QHeaderView)
+from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QTextEdit, QWidget, QHBoxLayout, QVBoxLayout,QFormLayout , QLineEdit,
+    QDateEdit, QComboBox, QPushButton, QMessageBox, QLabel, QCompleter, QTableWidget, QTableWidgetItem, QHeaderView,
+    QTextEdit)
 from PySide6.QtCore import Qt, QDate, QSize
 from PySide6.QtGui import QIcon
 
@@ -505,3 +506,256 @@ class AddUserForm(QDialog):
             'password' : self.form.tbPassword.text(),
             'position' : self.form.cbPosition.currentText()
         }
+        
+class UpdateUserForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel('Update User')
+        self.form = UserForm()
+        self.updatebar = UpdateBar()
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+        
+    def set_fields(self, **kargs):
+        self.form.cbName.setCurrentText(kargs.get('name', ''))
+        self.form.tbUserName.setText(kargs.get('username', ''))
+        self.form.tbPassword.setText(kargs.get('password', ''))
+        self.form.cbPosition.setCurrentText(kargs.get('position', ''))
+    
+    def get_fields(self):
+        return {
+            'name' : self.form.cbName.currentText(),
+            'username' : self.form.tbUserName.text(),
+            'password' : self.form.tbPassword.text(),
+            'position' : self.form.cbPosition.currentText()
+        }
+    
+class BrowseUserForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel('Browse Users')
+        self.form = UserForm()
+        
+        self.form.cbName.setDisabled(True)
+        self.form.tbUserName.setReadOnly(True)
+        self.form.tbPassword.setReadOnly(True)
+        self.form.tbConfirmPassword.setReadOnly(True)
+        self.form.cbPosition.setDisabled(True)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        
+    def set_fields(self, **kargs):
+        self.form.cbName.setCurrentText(kargs.get('name', ''))
+        self.form.tbUserName.setText(kargs.get('username', ''))
+        self.form.tbPassword.setText(kargs.get('password', ''))
+        self.form.cbPosition.setCurrentText(kargs.get('position', ''))
+    
+class BlotterForm(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QFormLayout(self)
+        
+        self.tbRecordDate = QDateEdit()
+        self.tbRecordDate.setCalendarPopup(True)
+        self.tbStatus = QLineEdit()
+        self.tbActionTaken = QLineEdit()
+        self.tbNatureOfDispute = QLineEdit()
+        self.tbComplainant = QLineEdit()
+        self.tbRespondent = QLineEdit()
+        self.tbFullReport = QTextEdit()
+        
+        main_layout.addRow('Record Date:', self.tbRecordDate)
+        main_layout.addRow('Status:', self.tbStatus)
+        main_layout.addRow('Action Taken:', self.tbActionTaken)
+        main_layout.addRow('Nature of Dispute:', self.tbNatureOfDispute)
+        main_layout.addRow('Complainant:', self.tbComplainant)
+        main_layout.addRow('Respondent:', self.tbRespondent)
+        main_layout.addRow('Full Report:', self.tbFullReport)
+    
+class AddBlotterForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel('Add Blotter')
+        self.form = BlotterForm()
+        self.addbar = AddBar()
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.addbar)
+        
+    def set_fields(self, **kargs):
+        
+        record_date = kargs.get('record_date', None)
+        
+        # If date_of_birth exists and is a date object, convert it to QDate
+        if isinstance(record_date, date):
+            # Extract year, month, and day from the date object
+            qrecord_date = QDate(record_date.year, record_date.month, record_date.day)
+        else:
+            # Default to current date if no valid date is found
+            qrecord_date = QDate.currentDate()
+        
+        self.form.tbRecordDate.setDate(qrecord_date)
+        self.form.tbStatus.setText(kargs.get('status', ''))
+        self.form.tbActionTaken.setText(kargs.get('action_taken', ''))
+        self.form.tbNatureOfDispute.setText(kargs.get('nature_of_dispute', ''))
+        self.form.tbComplainant.setText(kargs.get('complainant', ''))
+        self.form.tbRespondent.setText(kargs.get('respondent', ''))
+        self.form.tbFullReport.setText(kargs.get('full_report', ''))
+        
+    def get_fields(self):
+        return {
+            'record_date': self.form.tbRecordDate.date().toPython(),
+            'status': self.form.tbStatus.text(),
+            'action_taken': self.form.tbActionTaken.text(),
+            'nature_of_dispute': self.form.tbNatureOfDispute.text(),
+            'complainant': self.form.tbComplainant.text(),
+            'respondent': self.form.tbRespondent.text(),
+            'full_report': self.form.tbFullReport.toPlainText()
+        }
+
+class UpdateBlotterForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel("Update Blotter")
+        self.form = BlotterForm()
+        self.updatebar = UpdateBar()
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+        
+    def set_fields(self, **kargs):
+        
+        record_date = kargs.get('record_date', None)
+        
+        # If date_of_birth exists and is a date object, convert it to QDate
+        if isinstance(record_date, date):
+            # Extract year, month, and day from the date object
+            qrecord_date = QDate(record_date.year, record_date.month, record_date.day)
+        else:
+            # Default to current date if no valid date is found
+            qrecord_date = QDate.currentDate()
+        
+        self.form.tbRecordDate.setDate(qrecord_date)
+        self.form.tbStatus.setText(kargs.get('status', ''))
+        self.form.tbActionTaken.setText(kargs.get('action_taken', ''))
+        self.form.tbNatureOfDispute.setText(kargs.get('nature_of_dispute', ''))
+        self.form.tbComplainant.setText(kargs.get('complainant', ''))
+        self.form.tbRespondent.setText(kargs.get('respondent', ''))
+        self.form.tbFullReport.setText(kargs.get('full_report', ''))
+        
+    def get_fields(self):
+        return {
+            'record_date': self.form.tbRecordDate.date().toPython(),
+            'status': self.form.tbStatus.text(),
+            'action_taken': self.form.tbActionTaken.text(),
+            'nature_of_dispute': self.form.tbNatureOfDispute.text(),
+            'complainant': self.form.tbComplainant.text(),
+            'respondent': self.form.tbRespondent.text(),
+            'full_report': self.form.tbFullReport.toPlainText()
+        }
+    
+class BrowseBlotterForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel("Browse Blotter")
+        self.form = BlotterForm()
+        
+        self.form.tbRecordDate.setReadOnly(True)
+        self.form.tbStatus.setReadOnly(True)
+        self.form.tbActionTaken.setReadOnly(True)
+        self.form.tbNatureOfDispute.setReadOnly(True)
+        self.form.tbComplainant.setReadOnly(True)
+        self.form.tbRespondent.setReadOnly(True)
+        self.form.tbFullReport.setReadOnly(True)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        
+    def set_fields(self, **kargs):
+        
+        record_date = kargs.get('record_date', None)
+        
+        # If date_of_birth exists and is a date object, convert it to QDate
+        if isinstance(record_date, date):
+            # Extract year, month, and day from the date object
+            qrecord_date = QDate(record_date.year, record_date.month, record_date.day)
+        else:
+            # Default to current date if no valid date is found
+            qrecord_date = QDate.currentDate()
+        
+        self.form.tbRecordDate.setDate(qrecord_date)
+        self.form.tbStatus.setText(kargs.get('status', ''))
+        self.form.tbActionTaken.setText(kargs.get('action_taken', ''))
+        self.form.tbNatureOfDispute.setText(kargs.get('nature_of_dispute', ''))
+        self.form.tbComplainant.setText(kargs.get('complainant', ''))
+        self.form.tbRespondent.setText(kargs.get('respondent', ''))
+        self.form.tbFullReport.setText(kargs.get('full_report', ''))
+
+class CertificateForm(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QFormLayout(self)
+        
+        self.cbName = QComboBox()
+        self.cbName.setEditable(True)
+        completer = self.cbName.completer()
+        completer.setFilterMode(Qt.MatchContains)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.PopupCompletion) 
+        self.cbName.setCompleter(completer)
+        self.cbName.setInsertPolicy(QComboBox.NoInsert)
+        
+        self.tbDateIssued = QDateEdit()
+        self.tbDateIssued.setCalendarPopup(True)
+        self.tbType = QComboBox()
+        self.tbType.addItems(['CLEARANCE', 'INDIGENCY', 'FIRST TIME JOB SEEKER'])
+        self.tbPurpose = QTextEdit()
+        
+        main_layout.addRow('Name:', self.cbName)
+        main_layout.addRow('Date Issued:', self.tbDateIssued)
+        main_layout.addRow('Type:', self.tbType)
+        main_layout.addRow('Purpose:', self.tbPurpose)
+
+class AddCertificateForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header =  QLabel('Add Certificaate')
+        self.form = CertificateForm()
+        self.addbar = AddBar()
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.addbar)
+    
+    def set_fields(self, **kargs):
+        self.form.cbName.addItems(kargs.get('name', ''))

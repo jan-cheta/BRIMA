@@ -1,11 +1,14 @@
 from base import Database
 from model import Household, Resident, User, Blotter
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
-    UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm)
+    UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
+    UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm
+)
 from view import  BrimaView
 from widgets import BaseWindow
 from PySide6.QtWidgets import QMessageBox, QDialog
-from sqlalchemy import or_, and_
+from PySide6.QtCore import Qt, QDate, QSize
+from sqlalchemy import or_, and_, desc
 
 
 class MainController:
@@ -16,10 +19,12 @@ class MainController:
         self.household_control = HouseholdWindowController(self.view.household_window)
         self.resident_control = ResidentWindowController(self.view.resident_window)
         self.user_control = UserWindowController(self.view.admin_window)
+        self.blotter_control = BlotterWindowController(self.view.blotter_window)
         
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
         self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
+        self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -731,66 +736,56 @@ class UserWindowController:
             user = self.session.query(User).get(row_id)
     
             if user:
-                update_form = UpdateResidentForm()
+                update_form = UpdateUserForm()
     
                 # Fetch households
-                households = self.session.query(Household).order_by(Household.household_name).all()
-                household_dict = {household.household_name: household.id for household in households}
-                household_names = list(household_dict.keys())
+                residents = self.session.query(Resident).filter(Resident.user == None).order_by(Resident.last_name).all()
+                resident_dict = {
+                    " ".join(filter(None, [
+                        resident.first_name,
+                        resident.middle_name,
+                        resident.last_name,
+                        resident.suffix
+                    ])): resident.id
+                    for resident in residents
+                }
+                resident_names = list(resident_dict.keys())
     
                 # Populate household combo box
-                update_form.form.cbHousehold.clear()
-                update_form.form.cbHousehold.addItems(household_names)
-                update_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
-                self.autofill_household(household_dict, update_form)
+                update_form.form.cbName.clear()
+                update_form.form.cbName.addItems(resident_names)
+                full_name = ""
+                if user.resident:
+                    full_name = " ".join(filter(None, [
+                        user.resident.first_name,
+                        user.resident.middle_name,
+                        user.resident.last_name,
+                        user.resident.suffix
+                    ]))
+                    update_form.form.cbName.setCurrentText(full_name)
     
-                update_form.form.cbHousehold.currentTextChanged.connect(
-                    lambda: self.autofill_household(household_dict, update_form)
-                )
     
                 # Set initial values
                 update_form.set_fields(
-                    first_name=resident.first_name,
-                    last_name=resident.last_name,
-                    middle_name=resident.middle_name,
-                    suffix=resident.suffix,
-                    date_of_birth=resident.date_of_birth,
-                    phone1=resident.phone1,
-                    phone2=resident.phone2,
-                    email=resident.email,
-                    household=resident.household.household_name if resident.household else '',
-                    occupation=resident.occupation,
-                    civil_status=resident.civil_status,
-                    education=resident.education,
-                    remarks=resident.remarks,
-                    sex=resident.sex,
-                    role=resident.role,
+                    name = full_name,
+                    username = user.username,
+                    password = user.password,
+                    position = user.position
                 )
     
                 # Revert button restores original values
                 update_form.updatebar.btRevert.clicked.connect(
                     lambda: update_form.set_fields(
-                        first_name=resident.first_name,
-                        last_name=resident.last_name,
-                        middle_name=resident.middle_name,
-                        suffix=resident.suffix,
-                        date_of_birth=resident.date_of_birth,
-                        phone1=resident.phone1,
-                        phone2=resident.phone2,
-                        email=resident.email,
-                        household=resident.household.household_name if resident.household else '',
-                        occupation=resident.occupation,
-                        civil_status=resident.civil_status,
-                        education=resident.education,
-                        remarks=resident.remarks,
-                        sex=resident.sex,
-                        role=resident.role,
+                        name = full_name,
+                        username = user.username,
+                        password = user.password,
+                        position = user.position
                     )
                 )
     
                 # Save button
                 update_form.updatebar.btUpdate.clicked.connect(
-                    lambda: self.save_update(resident, update_form, household_dict)
+                    lambda: self.save_update(user, update_form, resident_dict)
                 )
     
                 # Cancel button
@@ -799,81 +794,59 @@ class UserWindowController:
                 update_form.exec()
     
     
-    def save_update(self, resident, update_form, household_dict):
+    def save_update(self, user, update_form, resident_dict):
         updated_data = update_form.get_fields()
     
         # Map household name to ID
-        household_name = update_form.form.cbHousehold.currentText()
-        household_id = household_dict.get(household_name)
+        resident_name = update_form.form.cbName.currentText()
+        resident_id = resident_dict.get(resident_name)
     
-        if not household_id:
-            QMessageBox.critical(update_form, "Error", "Please select a valid household.")
+        if not resident_name:
+            QMessageBox.critical(update_form, "Error", "Please select a valid resident.")
             return
     
-        household = self.session.query(Household).get(household_id)
-        if not household:
-            QMessageBox.critical(update_form, "Error", "Selected household does not exist.")
+        resident = self.session.query(Resident).get(resident_id)
+        if not resident:
+            QMessageBox.critical(update_form, "Error", "Selected resident does not exist.")
             return
     
         # Update resident fields
-        resident.first_name = updated_data["first_name"].upper()
-        resident.last_name = updated_data["last_name"].upper()
-        resident.middle_name = updated_data["middle_name"].upper()
-        resident.suffix = updated_data["suffix"].upper()
-        resident.date_of_birth = updated_data["date_of_birth"]
-        resident.phone1 = updated_data["phone1"]
-        resident.phone2 = updated_data["phone2"]
-        resident.email = updated_data["email"]
-        resident.occupation = updated_data["occupation"]
-        resident.civil_status = updated_data["civil_status"]
-        resident.education = updated_data["education"]
-        resident.remarks = updated_data["remarks"]
-        resident.sex = updated_data["sex"]
-        resident.role = updated_data["role"]
-        resident.household = household
+        user.username = updated_data['username']
+        user.password = updated_data['password']
+        user.position = updated_data['position']
+        user.resident = resident
     
         try:
             self.session.commit()
-            QMessageBox.information(update_form, "Success", "Resident updated successfully!")
+            QMessageBox.information(update_form, "Success", "User updated successfully!")
             update_form.accept()
             self.refresh()
         except Exception as e:
             self.session.rollback()
-            QMessageBox.critical(update_form, "Error", f"Failed to update resident: {str(e)}")
+            QMessageBox.critical(update_form, "Error", f"Failed to update User: {str(e)}")
         
     def browse(self):
         row_id = self.view.get_table_row()
         if row_id:
-            resident = self.session.query(Resident).get(row_id)
+            user = self.session.query(User).get(row_id)
             
-            if resident:
-                browse_form = BrowseResidentForm()
+            if user:
+                browse_form = BrowseUserForm()
+                resident = user.resident
                 
+                full_name = " ".join(filter(None, [
+                    resident.first_name,
+                    resident.middle_name,
+                    resident.last_name,
+                    resident.suffix
+                ]))
                 browse_form.set_fields(
-                    first_name=resident.first_name,
-                    last_name=resident.last_name,
-                    middle_name=resident.middle_name,
-                    suffix=resident.suffix,
-                    date_of_birth=resident.date_of_birth,
-                    phone1=resident.phone1,
-                    phone2=resident.phone2,
-                    email=resident.email,
-                    household=resident.household.household_name if resident.household else '',
-                    occupation=resident.occupation,
-                    civil_status=resident.civil_status,
-                    education=resident.education,
-                    remarks=resident.remarks,
-                    sex=resident.sex,
-                    role=resident.role,
+                    name = full_name,
+                    username = user.username,
+                    password = user.password,
+                    position = user.position
+                   
                 )
-                
-                households = self.session.query(Household).order_by(Household.household_name).all()
-                household_dict = {household.household_name: household.id for household in households}
-                household_names = list(household_dict.keys())
-    
-                # Populate household combo box
-                browse_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
-                self.autofill_household(household_dict, browse_form)
                 
                 browse_form.exec()
     
@@ -894,6 +867,198 @@ class UserWindowController:
                     self.session.delete(user)
                     self.session.commit()
                     self.refresh()
+
+class BlotterWindowController:
+    def __init__(self, view : BaseWindow):
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.view = view
+        self.refresh()
+        
+        self.view.btRefresh.clicked.connect(self.refresh)
+        self.view.btSearch.clicked.connect(self.search)
+        self.view.tbSearchBar.returnPressed.connect(self.search)
+        self.view.btAdd.clicked.connect(self.add)
+        self.view.btEdit.clicked.connect(self.edit)
+        self.view.btDelete.clicked.connect(self.delete)
+        self.view.btBrowse.clicked.connect(self.browse)
     
+    def refresh(self):
+        self.view.set_search_text('')
+        blotters = self.session.query(Blotter).order_by(desc(Blotter.record_date)).all()
+        data = []
+        for blotter in blotters:
+            result = [
+                blotter.id,
+                blotter.record_date,
+                blotter.complainant,
+                blotter.respondent,
+                blotter.status,
+                str(blotter.full_report)[:20]
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Record Date', 'Complainant', 'Respondent', 'Status','Report'], data)
+    
+    def search(self):
+        search_text = self.view.get_search_text().lower()  
+        search_terms = search_text.split() 
+        
+        # Base query
+        query = self.session.query(Blotter)
+        
+        # Apply AND of ORs: each term must match one of the fields
+        if search_terms:
+            conditions = []
+            for term in search_terms:
+                term_filter = or_(
+                    Blotter.record_date.ilike(f"%{term}%"),
+                    Blotter.complainant.ilike(f"%{term}%"),
+                    Blotter.respondent.ilike(f"%{term}%"),
+                    Blotter.status.ilike(f"%{term}%"),
+                    Blotter.full_report.ilike(f"%{term}%"),
+                )
+                conditions.append(term_filter)
+            
+            query = query.filter(and_(*conditions))
+        
+        # Order and execute
+        blotters = query.order_by(desc(Blotter.record_date)).all()
+        
+        data = []
+        for blotter in blotters:
+            result = [
+                blotter.id,
+                blotter.record_date,
+                blotter.complainant,
+                blotter.respondent,
+                blotter.status,
+                str(blotter.full_report)[:20]
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Record Date', 'Complainant', 'Respondent', 'Status','Report'], data)
+    
+    def add(self):
+            add_form = AddBlotterForm()
+            add_form.addbar.btAdd.clicked.connect(add_form.accept)
+            add_form.addbar.btCancel.clicked.connect(add_form.reject)
+            add_form.form.tbRecordDate.setDate(QDate.currentDate())
+            
+            # Execute the form as a modal dialog
+            if add_form.exec() == QDialog.Accepted:
+                # Get the data from the form
+                data = add_form.get_fields()
+                data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
+                
+                new_blotter = Blotter(**data)
+                
+                try:
+                    self.session.add(new_blotter)
+                    self.session.commit()
+                    QMessageBox.information(add_form, "Success", "Blotter added successfully!")
+                    
+                    self.refresh()
+                except Exception as e:
+                    self.session.rollback()
+                    QMessageBox.critical(self.view, "Error", f"Failed to add blotter: {str(e)}")
+
+    
+    def edit(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            blotter = self.session.query(Blotter).get(row_id)
+            
+            if blotter:
+                update_form = UpdateBlotterForm()
+                
+                update_form.set_fields(
+                    record_date = blotter.record_date,
+                    status = blotter.status,
+                    action_taken = blotter.action_taken,
+                    nature_of_dispute = blotter.nature_of_dispute,
+                    complainant = blotter.complainant,
+                    respondent = blotter.respondent,
+                    full_report = blotter.full_report
+                )
+                
+                update_form.updatebar.btRevert.clicked.connect(
+                    lambda: update_form.set_fields(
+                        record_date = blotter.record_date,
+                        status = blotter.statis,
+                        action_taken = blotter.action_taken,
+                        nature_of_dispute = blotter.nature_of_dispute,
+                        complainant = blotter.complainant,
+                        respondent = blotter.respondent,
+                        full_report = blotter.full_report
+                    )
+                )
+                
+                update_form.updatebar.btUpdate.clicked.connect(
+                    lambda: self.save_update(blotter, update_form)
+                )
+                
+                update_form.updatebar.btCancel.clicked.connect(update_form.reject)
+                
+                if update_form.exec() == QDialog.Accepted:
+                    self.refresh()
+    
+    def save_update(self, blotter, update_form):
+        data = update_form.get_fields()
+        data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
+        
+        blotter.record_date = data['record_date']
+        blotter.status = data['status']
+        blotter.action_taken = data['action_taken']
+        blotter.nature_of_dispute = data['nature_of_dispute']
+        blotter.complainant = data['complainant']
+        blotter.respondent = data['respondent']
+        blotter.full_report = data['full_report']
+        
+        try:
+            self.session.commit()
+            QMessageBox.information(self.view, "Success", "Blotter updated successfully!")
+        except Exception as e:
+            self.session.rollback()  
+            QMessageBox.critical(self.view, "Error", f"Failed to update blotter: {str(e)}")
+        
+        update_form.accept()   
+        
     def browse(self):
-        pass
+        row_id = self.view.get_table_row()
+        if row_id:
+            blotter = self.session.query(Blotter).get(row_id)
+            
+            if blotter:
+                browse_form = BrowseBlotterForm()
+                
+                browse_form.set_fields(
+                    record_date = blotter.record_date,
+                    status = blotter.status,
+                    action_taken = blotter.action_taken,
+                    nature_of_dispute = blotter.nature_of_dispute,
+                    complainant = blotter.complainant,
+                    respondent = blotter.respondent,
+                    full_report = blotter.full_report
+                )
+                
+                browse_form.exec()
+        
+    
+    def delete(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            blotter = self.session.query(Blotter).get(row_id)
+            if blotter:
+                reply = QMessageBox.question(
+                    self.view,  # Parent widget
+                    "Confirm Deletion",
+                    f"Are you sure you want to delete '{str(blotter.full_text)[:20]}'?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+    
+                if reply == QMessageBox.Yes:
+                    self.session.delete(blotter)
+                    self.session.commit()
+                    self.refresh()

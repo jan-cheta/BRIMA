@@ -82,6 +82,9 @@ class BrimaView(QWidget):
         
         self.admin_window = BaseWindow("User")
         self.stack.addWidget(self.admin_window)
+        
+        self.blotter_window = BaseWindow("Blotter")
+        self.stack.addWidget(self.blotter_window)
 
         content_layout.addWidget(self.stack)
 

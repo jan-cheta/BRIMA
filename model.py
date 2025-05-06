@@ -30,6 +30,7 @@ class Resident(BaseModel):
     
     household = relationship("Household", back_populates="residents")
     user = relationship("User", back_populates='resident')
+    certificates = relationship("Certificate")
 
 
 class Household(BaseModel):
@@ -62,6 +63,16 @@ class Blotter(BaseModel):
     complainant = Column(String)
     respondent = Column(String)
     full_report = Column(String)
+    
+class Certificate(BaseModel):
+    __tablename__ = "certificates"
+    
+    date_issued = Column(Date)
+    type = Column(String)
+    purpose = Column(String)
+    resident_id = Column(ForeignKey("residents.id"))
+    
+    resident = relationship("Resident", back_populates='certificates')
 
 
 

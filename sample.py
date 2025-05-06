@@ -1,7 +1,8 @@
 from datetime import date
 from faker import Faker
+import random
 from base import Database
-from model import Resident, Household, User
+from model import Resident, Household, User, Blotter, Certificate
 
 # Initialize Faker
 fake = Faker("en_PH")  # Philippine locale
@@ -61,5 +62,38 @@ for i in range(20):
             session.add(user)
 
     session.add(household)
+
+session.commit()
+
+# Get all created residents to use for certificate and blotter generation
+all_residents = session.query(Resident).all()
+
+# Generate Certificates for some residents
+for resident in all_residents:
+    for _ in range(random.randint(1, 2)):  # 1–2 certificates per resident
+        certificate = Certificate(
+            date_issued=fake.date_between(start_date='-2y', end_date='today'),
+            type=fake.random_element(["Barangay Clearance", "Indigency", "Residency"]).upper(),
+            purpose=fake.sentence(nb_words=4).upper(),
+            resident=resident
+        )
+        session.add(certificate)
+
+# Generate 10 blotter records
+for _ in range(10):
+    complainant = fake.random_element(all_residents)
+    respondent = fake.random_element([r for r in all_residents if r.id != complainant.id])
+    
+    blotter = Blotter(
+        record_date=fake.date_between(start_date='-1y', end_date='today'),
+        status=fake.random_element(["Open", "Ongoing", "Closed"]).upper(),
+        action_taken=fake.sentence(nb_words=6).upper(),
+        nature_of_dispute=fake.random_element([
+            "Noise Complaint", "Boundary Dispute", "Domestic Issue", "Harassment", "Vandalism"]).upper(),
+        complainant=f"{complainant.first_name} {complainant.last_name}".upper(),
+        respondent=f"{respondent.first_name} {respondent.last_name}".upper(),
+        full_report=fake.paragraph(nb_sentences=3).upper()
+    )
+    session.add(blotter)
 
 session.commit()
