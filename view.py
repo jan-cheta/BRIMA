@@ -85,6 +85,9 @@ class BrimaView(QWidget):
         
         self.blotter_window = BaseWindow("Blotter")
         self.stack.addWidget(self.blotter_window)
+        
+        self.certificate_window = BaseWindow("Certificate")
+        self.stack.addWidget(self.certificate_window)
 
         content_layout.addWidget(self.stack)
 

@@ -1,8 +1,9 @@
 from base import Database
-from model import Household, Resident, User, Blotter
+from model import Household, Resident, User, Blotter, Certificate
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
-    UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm
+    UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
+    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
 )
 from view import  BrimaView
 from widgets import BaseWindow
@@ -20,11 +21,13 @@ class MainController:
         self.resident_control = ResidentWindowController(self.view.resident_window)
         self.user_control = UserWindowController(self.view.admin_window)
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
+        self.certificate_control = CertificateWindowController(self.view.certificate_window)
         
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
         self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
         self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
+        self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -1060,5 +1063,307 @@ class BlotterWindowController:
     
                 if reply == QMessageBox.Yes:
                     self.session.delete(blotter)
+                    self.session.commit()
+                    self.refresh()
+                    
+class CertificateWindowController:
+    def __init__(self, view: BaseWindow):
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.view = view
+        self.refresh()
+        
+        self.view.btRefresh.clicked.connect(self.refresh)
+        self.view.btSearch.clicked.connect(self.search)
+        self.view.tbSearchBar.returnPressed.connect(self.search)
+        self.view.btAdd.clicked.connect(self.add)
+        self.view.btEdit.clicked.connect(self.edit)
+        self.view.btDelete.clicked.connect(self.delete)
+        self.view.btBrowse.clicked.connect(self.browse)
+    
+    def refresh(self):
+        self.view.set_search_text('')
+        certificates = self.session.query(Certificate).join(Certificate.resident).order_by(desc(Certificate.date_issued)).all()
+        data = []
+        for certificate in certificates:
+            resident = certificate.resident 
+            date_issued = certificate.date_issued
+            type = certificate.type
+            purpose = certificate.purpose
+            resident_name = [
+                getattr(resident, "first_name", ""),
+                getattr(resident, "middle_name", ""),
+                getattr(resident, "last_name", ""),
+                getattr(resident, "suffix", "")
+            ] if resident else []
+    
+            full_name = " ".join(filter(None, resident_name))
+    
+            result = [
+                certificate.id,
+                date_issued,
+                type,
+                full_name,
+                purpose
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Date Issued', 'Type', 'Resident', 'Purpose'], data)
+        
+    def search(self):
+        search_text = self.view.get_search_text().lower()
+        search_terms = search_text.split()
+    
+        # Start with base query and join household
+        query = self.session.query(Certificate).join(Certificate.resident)
+    
+        # Apply search filters
+        if search_terms:
+            conditions = []
+            for term in search_terms:
+                term_filter = or_(
+                    Resident.first_name.ilike(f"%{term}%"),
+                    Resident.middle_name.ilike(f"%{term}%"),
+                    Resident.last_name.ilike(f"%{term}%"),
+                    Resident.suffix.ilike(f"%{term}%"),
+                    Certificate.date_issued.ilike(f"%{term}%"),
+                    Certificate.type.ilike(f"%{term}%"),
+                    Certificate.purpose.ilike(f"%{term}%")
+                )
+                conditions.append(term_filter)
+            
+            query = query.filter(and_(*conditions))
+    
+        # Apply sorting
+        certificates = query.order_by(desc(Certificate.date_issued), Resident.last_name).all()
+    
+        # Format results
+        data = []
+        for certificate in certificates:
+            resident = certificate.resident 
+            date_issued = certificate.date_issued
+            type = certificate.type
+            purpose = certificate.purpose
+            resident_name = [
+                getattr(resident, "first_name", ""),
+                getattr(resident, "middle_name", ""),
+                getattr(resident, "last_name", ""),
+                getattr(resident, "suffix", "")
+            ] if resident else []
+    
+            full_name = " ".join(filter(None, resident_name))
+    
+            result = [
+                certificate.id,
+                date_issued,
+                type,
+                full_name,
+                purpose
+            ]
+            data.append(result)
+        
+        self.view.load_table(['id', 'Date Issued', 'Type', 'Resident', 'Purpose'], data)
+        
+    def add(self):
+        add_form = AddCertificateForm()
+    
+        # Populate households for dropdown (household names and IDs)
+        residents = self.session.query(Resident).filter(Resident.user == None).order_by(Resident.last_name).all()
+        resident_dict = {
+            " ".join(filter(None, [
+                resident.first_name,
+                resident.middle_name,
+                resident.last_name,
+                resident.suffix
+            ])): resident.id
+            for resident in residents
+        }
+    
+        # Set the fields for the form (populate the household dropdown with names)
+        add_form.set_fields(name=list(resident_dict.keys()))
+        add_form.form.cbName.setCurrentText('')  # Ensure no default value is set
+    
+        # Button signals
+        add_form.addbar.btAdd.clicked.connect(lambda: self.on_add_button_click(add_form, resident_dict))
+        add_form.addbar.btCancel.clicked.connect(add_form.reject)
+    
+        # Execute the form as a modal dialog
+        add_form.exec()
+    
+    def on_add_button_click(self, add_form, resident_dict):
+        data = add_form.get_fields()
+    
+        resident_name = data.get("name")
+        if not resident_name:  
+            QMessageBox.critical(add_form, "Error", "Please select a Resident.")
+            return  
+        
+        resident_id = resident_dict.get(resident_name)
+        if not resident_id:
+            QMessageBox.critical(add_form, "Error", f"No matching Household found for '{resident_name}'.")
+            return  
+            
+        resident = self.session.query(Resident).get(resident_id)
+    
+        # Remove the 'household' key from the data dictionary since it's already handled
+        del data['name']
+    
+        # Uppercase all string values in data (excluding non-string types)
+        data = {key: value.upper() if isinstance(value, str) and key != 'username' and key != 'password' else value for key, value in data.items()}
+    
+        # Create a new Resident instance with the provided data
+        new_user = User(**data)
+        new_user.resident = resident  # Associate the resident with the selected household
+    
+        try:
+            # Add the new resident to the session and commit the transaction
+            self.session.add(new_user)
+            self.session.commit()
+            QMessageBox.information(add_form, "Success", "User added successfully!")
+            self.refresh()  
+            
+            # Close the dialog only if everything is successful
+            add_form.accept()
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(add_form, "Error", f"Failed to add resident: {str(e)}")
+            add_form.activateWindow() 
+            add_form.raise_()    
+    
+    def edit(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            user = self.session.query(User).get(row_id)
+    
+            if user:
+                update_form = UpdateUserForm()
+    
+                # Fetch households
+                residents = self.session.query(Resident).filter(Resident.user == None).order_by(Resident.last_name).all()
+                resident_dict = {
+                    " ".join(filter(None, [
+                        resident.first_name,
+                        resident.middle_name,
+                        resident.last_name,
+                        resident.suffix
+                    ])): resident.id
+                    for resident in residents
+                }
+                resident_names = list(resident_dict.keys())
+    
+                # Populate household combo box
+                update_form.form.cbName.clear()
+                update_form.form.cbName.addItems(resident_names)
+                full_name = ""
+                if user.resident:
+                    full_name = " ".join(filter(None, [
+                        user.resident.first_name,
+                        user.resident.middle_name,
+                        user.resident.last_name,
+                        user.resident.suffix
+                    ]))
+                    update_form.form.cbName.setCurrentText(full_name)
+    
+    
+                # Set initial values
+                update_form.set_fields(
+                    name = full_name,
+                    username = user.username,
+                    password = user.password,
+                    position = user.position
+                )
+    
+                # Revert button restores original values
+                update_form.updatebar.btRevert.clicked.connect(
+                    lambda: update_form.set_fields(
+                        name = full_name,
+                        username = user.username,
+                        password = user.password,
+                        position = user.position
+                    )
+                )
+    
+                # Save button
+                update_form.updatebar.btUpdate.clicked.connect(
+                    lambda: self.save_update(user, update_form, resident_dict)
+                )
+    
+                # Cancel button
+                update_form.updatebar.btCancel.clicked.connect(update_form.reject)
+    
+                update_form.exec()
+    
+    
+    def save_update(self, user, update_form, resident_dict):
+        updated_data = update_form.get_fields()
+    
+        # Map household name to ID
+        resident_name = update_form.form.cbName.currentText()
+        resident_id = resident_dict.get(resident_name)
+    
+        if not resident_name:
+            QMessageBox.critical(update_form, "Error", "Please select a valid resident.")
+            return
+    
+        resident = self.session.query(Resident).get(resident_id)
+        if not resident:
+            QMessageBox.critical(update_form, "Error", "Selected resident does not exist.")
+            return
+    
+        # Update resident fields
+        user.username = updated_data['username']
+        user.password = updated_data['password']
+        user.position = updated_data['position']
+        user.resident = resident
+    
+        try:
+            self.session.commit()
+            QMessageBox.information(update_form, "Success", "User updated successfully!")
+            update_form.accept()
+            self.refresh()
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(update_form, "Error", f"Failed to update User: {str(e)}")
+        
+    def browse(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            user = self.session.query(User).get(row_id)
+            
+            if user:
+                browse_form = BrowseUserForm()
+                resident = user.resident
+                
+                full_name = " ".join(filter(None, [
+                    resident.first_name,
+                    resident.middle_name,
+                    resident.last_name,
+                    resident.suffix
+                ]))
+                browse_form.set_fields(
+                    name = full_name,
+                    username = user.username,
+                    password = user.password,
+                    position = user.position
+                   
+                )
+                
+                browse_form.exec()
+    
+    def delete(self):
+        row_id = self.view.get_table_row()
+        if row_id:
+            certificate = self.session.query(Certificate).get(row_id)
+            if certificate:
+                reply = QMessageBox.question(
+                    self.view, 
+                    "Confirm Deletion",
+                    f"Are you sure you want to delete Certificate: {certificate.date_issued} {certificate.type}: {certificate.resident.first_name} {certificate.resident.middle_name} {certificate.resident.last_name} {certificate.resident.suffix}?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+    
+                if reply == QMessageBox.Yes:
+                    self.session.delete(user)
                     self.session.commit()
                     self.refresh()

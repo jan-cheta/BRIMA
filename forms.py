@@ -423,6 +423,7 @@ class BrowseResidentForm(QDialog):
         
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
+        main_layout.addStretch()
         
     def set_fields(self, **kargs):
         self.form.tbFirstName.setText(kargs.get('first_name', ''))
@@ -695,6 +696,7 @@ class BrowseBlotterForm(QDialog):
         
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
+        main_layout.addStretch()
         
     def set_fields(self, **kargs):
         
@@ -733,13 +735,13 @@ class CertificateForm(QWidget):
         
         self.tbDateIssued = QDateEdit()
         self.tbDateIssued.setCalendarPopup(True)
-        self.tbType = QComboBox()
-        self.tbType.addItems(['CLEARANCE', 'INDIGENCY', 'FIRST TIME JOB SEEKER'])
+        self.cbType = QComboBox()
+        self.cbType.addItems(['CLEARANCE', 'INDIGENCY', 'FIRST TIME JOB SEEKER'])
         self.tbPurpose = QTextEdit()
         
         main_layout.addRow('Name:', self.cbName)
         main_layout.addRow('Date Issued:', self.tbDateIssued)
-        main_layout.addRow('Type:', self.tbType)
+        main_layout.addRow('Type:', self.cbType)
         main_layout.addRow('Purpose:', self.tbPurpose)
 
 class AddCertificateForm(QDialog):
@@ -748,7 +750,7 @@ class AddCertificateForm(QDialog):
         
         main_layout = QVBoxLayout(self)
         
-        self.header =  QLabel('Add Certificaate')
+        self.header =  QLabel('Add Certificate')
         self.form = CertificateForm()
         self.addbar = AddBar()
         
@@ -759,3 +761,78 @@ class AddCertificateForm(QDialog):
     
     def set_fields(self, **kargs):
         self.form.cbName.addItems(kargs.get('name', ''))
+        
+    def get_fields(self):
+        return {
+            'name': self.form.cbName.currentText(),
+            'date_issued': self.form.tbDateIssued.date().toPython(),
+            'type': self.form.cbType.currentText(),
+            'purpose': self.form.tbPurpose.toPlainText()
+        }
+
+class UpdateCertificateForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header =  QLabel('Update Certificate')
+        self.form = CertificateForm()
+        self.updatebar = UpdateBar()
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+    
+    def set_fields(self, **kargs):
+        self.form.cbName.setCurrentText(kargs.get('name', ''))
+        date_issued = kargs.get('date_issued', None)
+        
+        if isinstance(date_issued, date):
+            qdate_issued = QDate(date_issued.year, date_issued.month, date_issued.day)
+        else:
+            qdate_issued = QDate.currentDate()
+        
+        self.form.tbDateIssued.setDate(qdate_issued)
+        self.form.cbType.setCurrentText(kargs.get('type', ''))
+        self.form.tbPurpose.setText(kargs.get('purpose', ''))
+    
+    def get_fields(self):
+        return {
+            'name': self.form.cbName.currentText(),
+            'date_issued': self.form.tbDateIssued.date().toPython(),
+            'type': self.form.cbType.currentText(),
+            'purpose': self.form.tbPurpose.toPlainText()
+        }
+
+class BrowseCertificateForm(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = QLabel('Browse Certificate')
+        self.form = CertificateForm()
+        
+        self.form.cbName.setDisabled(True)
+        self.form.tbDateIssued.setReadOnly(True)
+        self.form.cbType.setDisabled(True)
+        self.form.tbPurpose.setReadOnly(True)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+    
+    def set_fields(self, **kargs):
+        self.form.cbName.setCurrentText(kargs.get('name', ''))
+        date_issued = kargs.get('date_issued', None)
+        
+        if isinstance(date_issued, date):
+            qdate_issued = QDate(date_issued.year, date_issued.month, date_issued.day)
+        else:
+            qdate_issued = QDate.currentDate()
+        
+        self.form.tbDateIssued.setDate(qdate_issued)
+        self.form.cbType.setCurrentText(kargs.get('type', ''))
+        self.form.tbPurpose.setText(kargs.get('purpose', ''))
