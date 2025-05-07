@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QLineEdit, QLabel, QTableWidgetItem, QHeaderView)
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage
+from PySide6.QtCore import QSize, Qt, QRect
 
 class BaseWindow(QWidget):
     def __init__(self, title):
@@ -102,4 +102,33 @@ class BaseWindow(QWidget):
     def set_search_text(self, text):
         self.tbSearchBar.setText(text)
     
-    
+
+from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtCore import Qt
+
+
+class ScalableImageWidget(QWidget):
+    def __init__(self, image_path: str, parent=None):
+        super().__init__(parent)
+        self.original_pixmap = QPixmap(image_path)
+        self.scaled_pixmap = None
+        self.setMinimumSize(10, 10)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if not self.original_pixmap.isNull():
+            self.scaled_pixmap = self.original_pixmap.scaled(
+                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+        self.update()
+
+    def paintEvent(self, event):
+        if self.scaled_pixmap:
+            painter = QPainter(self)
+            # Center the scaled pixmap inside the widget
+            x = (self.width() - self.scaled_pixmap.width()) // 2
+            y = (self.height() - self.scaled_pixmap.height()) // 2
+            target_rect = QRect(x, y, self.scaled_pixmap.width(), self.scaled_pixmap.height())
+            painter.drawPixmap(target_rect, self.scaled_pixmap)
+            painter.end()

@@ -28,6 +28,7 @@ class MainController:
         self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
         self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
         self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
+        self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -1166,9 +1167,10 @@ class CertificateWindowController:
         
     def add(self):
         add_form = AddCertificateForm()
-    
+        
+        add_form.form.tbDateIssued.setDate(QDate.currentDate())
         # Populate households for dropdown (household names and IDs)
-        residents = self.session.query(Resident).filter(Resident.user == None).order_by(Resident.last_name).all()
+        residents = self.session.query(Resident).order_by(Resident.first_name).all()
         resident_dict = {
             " ".join(filter(None, [
                 resident.first_name,
@@ -1178,7 +1180,7 @@ class CertificateWindowController:
             ])): resident.id
             for resident in residents
         }
-    
+        
         # Set the fields for the form (populate the household dropdown with names)
         add_form.set_fields(name=list(resident_dict.keys()))
         add_form.form.cbName.setCurrentText('')  # Ensure no default value is set
@@ -1200,7 +1202,7 @@ class CertificateWindowController:
         
         resident_id = resident_dict.get(resident_name)
         if not resident_id:
-            QMessageBox.critical(add_form, "Error", f"No matching Household found for '{resident_name}'.")
+            QMessageBox.critical(add_form, "Error", f"No matching Resident found for '{resident_name}'.")
             return  
             
         resident = self.session.query(Resident).get(resident_id)
@@ -1209,17 +1211,17 @@ class CertificateWindowController:
         del data['name']
     
         # Uppercase all string values in data (excluding non-string types)
-        data = {key: value.upper() if isinstance(value, str) and key != 'username' and key != 'password' else value for key, value in data.items()}
+        data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
     
         # Create a new Resident instance with the provided data
-        new_user = User(**data)
-        new_user.resident = resident  # Associate the resident with the selected household
+        new_certificate = Certificate(**data)
+        new_certificate.resident = resident  # Associate the resident with the selected household
     
         try:
             # Add the new resident to the session and commit the transaction
-            self.session.add(new_user)
+            self.session.add(new_certificate)
             self.session.commit()
-            QMessageBox.information(add_form, "Success", "User added successfully!")
+            QMessageBox.information(add_form, "Success", "Certificate added successfully!")
             self.refresh()  
             
             # Close the dialog only if everything is successful
@@ -1233,13 +1235,13 @@ class CertificateWindowController:
     def edit(self):
         row_id = self.view.get_table_row()
         if row_id:
-            user = self.session.query(User).get(row_id)
+            certificate = self.session.query(Certificate).get(row_id)
     
-            if user:
-                update_form = UpdateUserForm()
+            if certificate:
+                update_form = UpdateCertificateForm()
     
                 # Fetch households
-                residents = self.session.query(Resident).filter(Resident.user == None).order_by(Resident.last_name).all()
+                residents = self.session.query(Resident).order_by(Resident.first_name).all()
                 resident_dict = {
                     " ".join(filter(None, [
                         resident.first_name,
@@ -1254,13 +1256,15 @@ class CertificateWindowController:
                 # Populate household combo box
                 update_form.form.cbName.clear()
                 update_form.form.cbName.addItems(resident_names)
+                
                 full_name = ""
-                if user.resident:
+                
+                if Certificate.resident:
                     full_name = " ".join(filter(None, [
-                        user.resident.first_name,
-                        user.resident.middle_name,
-                        user.resident.last_name,
-                        user.resident.suffix
+                        certificate.resident.first_name,
+                        certificate.resident.middle_name,
+                        certificate.resident.last_name,
+                        certificate.resident.suffix
                     ]))
                     update_form.form.cbName.setCurrentText(full_name)
     
@@ -1268,24 +1272,24 @@ class CertificateWindowController:
                 # Set initial values
                 update_form.set_fields(
                     name = full_name,
-                    username = user.username,
-                    password = user.password,
-                    position = user.position
+                    date_issued = certificate.date_issued,
+                    type = certificate.type,
+                    purpose = certificate.purpose
                 )
     
                 # Revert button restores original values
                 update_form.updatebar.btRevert.clicked.connect(
                     lambda: update_form.set_fields(
                         name = full_name,
-                        username = user.username,
-                        password = user.password,
-                        position = user.position
+                        date_issued = certificate.date_issued,
+                        type = certificate.type,
+                        purpose = certificate.purpose
                     )
                 )
     
                 # Save button
                 update_form.updatebar.btUpdate.clicked.connect(
-                    lambda: self.save_update(user, update_form, resident_dict)
+                    lambda: self.save_update(certificate, update_form, resident_dict)
                 )
     
                 # Cancel button
@@ -1294,7 +1298,7 @@ class CertificateWindowController:
                 update_form.exec()
     
     
-    def save_update(self, user, update_form, resident_dict):
+    def save_update(self, certificate, update_form, resident_dict):
         updated_data = update_form.get_fields()
     
         # Map household name to ID
@@ -1311,28 +1315,28 @@ class CertificateWindowController:
             return
     
         # Update resident fields
-        user.username = updated_data['username']
-        user.password = updated_data['password']
-        user.position = updated_data['position']
-        user.resident = resident
+        certificate.date_issued = updated_data['date_issued']
+        certificate.type = updated_data['type']
+        certificate.purpose = updated_data['purpose']
+        certificate.resident = resident
     
         try:
             self.session.commit()
-            QMessageBox.information(update_form, "Success", "User updated successfully!")
+            QMessageBox.information(update_form, "Success", "Certificate updated successfully!")
             update_form.accept()
             self.refresh()
         except Exception as e:
             self.session.rollback()
-            QMessageBox.critical(update_form, "Error", f"Failed to update User: {str(e)}")
+            QMessageBox.critical(update_form, "Error", f"Failed to update Certificate: {str(e)}")
         
     def browse(self):
         row_id = self.view.get_table_row()
         if row_id:
-            user = self.session.query(User).get(row_id)
+            certificate = self.session.query(Certificate).get(row_id)
             
-            if user:
-                browse_form = BrowseUserForm()
-                resident = user.resident
+            if certificate:
+                browse_form = BrowseCertificateForm()
+                resident = certificate.resident
                 
                 full_name = " ".join(filter(None, [
                     resident.first_name,
@@ -1342,9 +1346,9 @@ class CertificateWindowController:
                 ]))
                 browse_form.set_fields(
                     name = full_name,
-                    username = user.username,
-                    password = user.password,
-                    position = user.position
+                    date_issued = certificate.date_issued,
+                    type = certificate.type,
+                    purpose = certificate.purpose
                    
                 )
                 

@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QStackedWidget, QFormLayout, QHBoxLayout, QVBoxLayout,
                                QLabel, QLineEdit, QComboBox, QDateEdit, QPushButton, QTableWidget, QTableWidgetItem)
-from widgets import BaseWindow
+from widgets import BaseWindow, ScalableImageWidget
 
 class BrimaView(QWidget):
     def __init__(self):
@@ -88,6 +88,9 @@ class BrimaView(QWidget):
         
         self.certificate_window = BaseWindow("Certificate")
         self.stack.addWidget(self.certificate_window)
+    
+        self.about_window = ScalableImageWidget(":/about")
+        self.stack.addWidget(self.about_window)
 
         content_layout.addWidget(self.stack)
 
