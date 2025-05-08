@@ -1,7 +1,9 @@
-from PySide6.QtWidgets import (QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLineEdit, QLabel, QTableWidgetItem, QHeaderView)
+from PySide6.QtWidgets import (QGridLayout, QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QLineEdit, QLabel, QTableWidgetItem, QHeaderView, QGroupBox)
 from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage
 from PySide6.QtCore import QSize, Qt, QRect
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 class BaseWindow(QWidget):
     def __init__(self, title):
@@ -102,11 +104,14 @@ class BaseWindow(QWidget):
     def set_search_text(self, text):
         self.tbSearchBar.setText(text)
     
-
-from PySide6.QtWidgets import QWidget
-from PySide6.QtGui import QPainter, QPixmap
-from PySide6.QtCore import Qt
-
+class AboutWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QVBoxLayout(self)
+        
+        self.header = "BRGY. SIBLOT"
+        self.QG
 
 class ScalableImageWidget(QWidget):
     def __init__(self, image_path: str, parent=None):
@@ -132,3 +137,29 @@ class ScalableImageWidget(QWidget):
             target_rect = QRect(x, y, self.scaled_pixmap.width(), self.scaled_pixmap.height())
             painter.drawPixmap(target_rect, self.scaled_pixmap)
             painter.end()
+            
+
+class ChartWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.figure = Figure(figsize=(5, 4))
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+    def plot_data(self, labels, values, title="Resident Stats"):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        ax.bar(labels, values)
+        ax.set_title(title)
+        self.canvas.draw()
+        
+# TODO:
+class DashboardWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        main_layout = QGridLayout(self)
+        
+        
