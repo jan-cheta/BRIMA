@@ -8,6 +8,14 @@ class BaseModel(Base):
 
     id = Column(Integer, primary_key=True)
 
+class Barangay(BaseModel):
+    __tablename__ = 'barangay'
+
+    name = Column(String)
+    history = Column(String)
+    mission = Column(String)
+    vision = Column(String)
+
 class Resident(BaseModel):
     __tablename__ = "residents"
 

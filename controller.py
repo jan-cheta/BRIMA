@@ -1,12 +1,12 @@
 from base import Database
-from model import Household, Resident, User, Blotter, Certificate
+from model import Household, Resident, User, Blotter, Certificate, Barangay
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
     UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
     AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
 )
 from view import  BrimaView
-from widgets import BaseWindow
+from widgets import BaseWindow, AboutWindow
 from PySide6.QtWidgets import QMessageBox, QDialog
 from PySide6.QtCore import Qt, QDate, QSize
 from sqlalchemy import or_, and_, desc
@@ -22,6 +22,7 @@ class MainController:
         self.user_control = UserWindowController(self.view.admin_window)
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
+        self.about_control = AboutUsWindowController(self.view.about_window)
         
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
@@ -29,6 +30,8 @@ class MainController:
         self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
         self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
         self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
+        self.view.btAboutUs.clicked.connect(self.about_control.load_data)
+
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -1368,6 +1371,52 @@ class CertificateWindowController:
                 )
     
                 if reply == QMessageBox.Yes:
-                    self.session.delete(user)
+                    self.session.delete(certificate)
                     self.session.commit()
                     self.refresh()
+
+class AboutUsWindowController:
+    def __init__(self, view: AboutWindow):
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.view = view
+        self.load_data()
+
+    def load_data(self):
+        barangay = self.session.query(Barangay).first()
+        users = self.session.query(User).join(User.resident).all()
+
+        user_list = []
+
+        if not users and not barangay:
+            return
+
+        for user in users:
+            position = user.position
+            resident = user.resident
+            resident_name = [
+                getattr(resident, "first_name", ""),
+                getattr(resident, "middle_name", ""),
+                getattr(resident, "last_name", ""),
+                getattr(resident, "suffix", "")
+            ] if resident else []
+    
+            full_name = " ".join(filter(None, resident_name))
+
+            user_list.append({'name': full_name, 'position': position})
+        
+        custom_order = ["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"]
+
+        self.view.load_data(
+            name = barangay.name,
+            history = barangay.history,
+            mission = barangay.mission,
+            vision = barangay.vision,
+            members = sorted(user_list, key=lambda user: custom_order.index(user['position'].upper()) if user['position'].upper() in custom_order else len(custom_order))
+        )
+            
+
+
+
+
+        

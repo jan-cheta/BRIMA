@@ -2,7 +2,7 @@ from datetime import date
 from faker import Faker
 import random
 from base import Database
-from model import Resident, Household, User, Blotter, Certificate
+from model import Resident, Household, User, Blotter, Certificate, Barangay
 
 # Initialize Faker
 fake = Faker("en_PH")  # Philippine locale
@@ -95,5 +95,16 @@ for _ in range(10):
         full_report=fake.paragraph(nb_sentences=3).upper()
     )
     session.add(blotter)
+
+existing_barangay = session.query(Barangay).first()
+if not existing_barangay:
+    barangay = Barangay(
+        name="Brgy Siblot",
+        history="Brgy Siblot was established in the early 1900s and has grown into a vibrant, close-knit community.",
+        mission="To promote sustainable development, peace, and community welfare.",
+        vision="A model barangay characterized by unity, progress, and active citizen participation."
+    )
+    session.add(barangay)
+    session.commit()
 
 session.commit()
