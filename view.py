@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QStackedWidget, QFormLayout, QHBoxLayout, QVBoxLayout,
                                QLabel, QLineEdit, QComboBox, QDateEdit, QPushButton, QTableWidget, QTableWidgetItem)
-from widgets import BaseWindow, ScalableImageWidget, AboutWindow
+from widgets import BaseWindow, ScalableImageWidget, AboutWindow, SettingsWindow
 
 class BrimaView(QWidget):
     def __init__(self):
@@ -40,7 +40,7 @@ class BrimaView(QWidget):
 
         self.btDashboard = QPushButton('Dahsboard')
         self.btDashboard.setObjectName('btDashboard')
-        self.btAboutUs = QPushButton('About Us')
+        self.btAboutUs = QPushButton('About Us')        
         self.btAboutUs.setObjectName('btAboutUs')
         self.btHousehold = QPushButton('Household')
         self.btHousehold.setObjectName('btHousehold')
@@ -91,6 +91,9 @@ class BrimaView(QWidget):
     
         self.about_window = AboutWindow()
         self.stack.addWidget(self.about_window)
+
+        self.settings_window = SettingsWindow()
+        self.stack.addWidget(self.settings_window)
 
         content_layout.addWidget(self.stack)
 

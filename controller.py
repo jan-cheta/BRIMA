@@ -6,10 +6,16 @@ from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
 )
 from view import  BrimaView
-from widgets import BaseWindow, AboutWindow
-from PySide6.QtWidgets import QMessageBox, QDialog
+from widgets import BaseWindow, AboutWindow, SettingsWindow
+from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
-from sqlalchemy import or_, and_, desc
+from sqlalchemy import or_, and_, desc, select
+from sqlalchemy.orm import aliased
+
+import os
+import shutil
+from datetime import datetime
+import pandas as pd
 
 
 class MainController:
@@ -23,7 +29,8 @@ class MainController:
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
         self.about_control = AboutUsWindowController(self.view.about_window)
-        
+        self.settings_control = SettingsWindowControl(self.view.settings_window)
+
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
         self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
@@ -31,6 +38,7 @@ class MainController:
         self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
         self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
         self.view.btAboutUs.clicked.connect(self.about_control.load_data)
+        self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
 
 
 class HouseholdWindowController:
@@ -1415,7 +1423,196 @@ class AboutUsWindowController:
             members = sorted(user_list, key=lambda user: custom_order.index(user['position'].upper()) if user['position'].upper() in custom_order else len(custom_order))
         )
             
+class SettingsWindowControl:
+    def __init__(self, view: SettingsWindow):
+        self.view = view
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.load_data()
 
+        self.view.btSave.clicked.connect(self.save_changes)
+        self.view.btRevert.clicked.connect(self.revert_changes)
+        self.view.btExport.clicked.connect(self.export_csv)
+    
+    def load_data(self):
+        barangay = self.session.query(Barangay).first()
+
+        if barangay:
+            self.view.set_fields(
+                name = barangay.name,
+                history = barangay.history,
+                mission = barangay.mission,
+                vision = barangay.vision
+            )
+    
+    def save_changes(self):
+        data = self.view.get_fields()
+        data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
+
+        barangay = self.session.query(Barangay).first()
+
+        if not barangay:
+            barangay = Barangay()
+            barangay.name = data.get('name', '')
+            barangay.history = data.get('history', '')
+            barangay.mission = data.get('mission', '')
+            barangay.vision = data.get('vision')
+
+            try:
+                # Add the new resident to the session and commit the transaction
+                self.session.add(barangay)
+                self.session.commit()
+                QMessageBox.information(self.view, "Success", "Barangay added successfully!")
+                self.load_data()  
+                
+            except Exception as e:
+                self.session.rollback()
+                QMessageBox.critical(self.view, "Error", f"Failed to add resident: {str(e)}")
+        else:
+            barangay.name = data.get('name', '')
+            barangay.history = data.get('history', '')
+            barangay.mission = data.get('mission', '')
+            barangay.vision = data.get('vision')
+
+            try:
+                self.session.commit()
+                QMessageBox.information(self.view, "Success", "Barangay updated successfully!")
+                self.load_data()  
+                
+            except Exception as e:
+                self.session.rollback()
+                QMessageBox.critical(self.view, "Error", f"Failed to add resident: {str(e)}")
+
+
+    def revert_changes(self):
+        barangay = self.session.query(Barangay).first()
+
+        if barangay:
+            self.view.set_fields(
+                name = barangay.name,
+                history = barangay.history,
+                mission = barangay.mission,
+                vision = barangay.vision
+            )
+
+    def export_csv(self):
+        timestamp = datetime.now().strftime("%Y_%m_%d")
+
+        try:
+            # Initialize a Pandas Excel writer to export multiple sheets
+            file_path, _ = QFileDialog.getSaveFileName(
+                self.view,
+                "Save Excel File",
+                f"export_{timestamp}.xlsx",
+                "Excel Files (*.xlsx);;All Files (*)"
+            )
+
+            if not file_path:
+                return  # User cancelled
+
+            # Export Resident & Household data
+            stmt_resident_household = (
+                select(
+                    Resident.id.label("resident_id"),
+                    Resident.first_name,
+                    Resident.last_name,
+                    Resident.middle_name,
+                    Resident.suffix,
+                    Resident.date_of_birth,
+                    Resident.occupation,
+                    Resident.civil_status,
+                    Resident.citizenship,
+                    Resident.sex,
+                    Resident.education,
+                    Resident.remarks,
+                    Resident.phone1,
+                    Resident.phone2,
+                    Resident.email,
+                    Resident.role,
+                    Household.household_name,
+                    Household.house_no,
+                    Household.street,
+                    Household.sitio,
+                    Household.landmark
+                )
+                .join(Resident.household)
+            )
+            df_resident_household = pd.read_sql(stmt_resident_household, self.session.bind)
+
+            # Export Resident & Certificate data
+            stmt_resident_certificate = (
+                select(
+                    Resident.id.label("resident_id"),
+                    Resident.first_name,
+                    Resident.middle_name,
+                    Resident.last_name,
+                    Resident.suffix,
+                    Certificate.type.label("certificate_type"),
+                    Certificate.purpose.label("certificate_purpose"),
+                    Certificate.date_issued
+                )
+                .join(Resident.certificates)
+            )
+            df_resident_certificate = pd.read_sql(stmt_resident_certificate, self.session.bind)
+
+            # Export Blotter data
+            stmt_blotter = select(Blotter)
+            df_blotter = pd.read_sql(stmt_blotter, self.session.bind)
+
+            # Export Resident & User data
+            stmt_resident_user = (
+                select(
+                    Resident.id.label("resident_id"),
+                    Resident.first_name,
+                    Resident.last_name,
+                    Resident.middle_name,
+                    Resident.suffix,
+                    Resident.date_of_birth,
+                    Resident.occupation,
+                    Resident.civil_status,
+                    Resident.citizenship,
+                    Resident.sex,
+                    Resident.education,
+                    Resident.remarks,
+                    Resident.phone1,
+                    Resident.phone2,
+                    Resident.email,
+                    Resident.role,
+                    Household.household_name,
+                    Household.house_no,
+                    Household.street,
+                    Household.sitio,
+                    Household.landmark,
+                    User.username,
+                    User.position
+                )
+                .join(Resident.user)  
+                .join(Resident.household)  
+            )
+            df_resident_user = pd.read_sql(stmt_resident_user, self.session.bind)
+
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                df_resident_household.to_excel(writer, sheet_name="RBI", index=False)
+                df_resident_certificate.to_excel(writer, sheet_name="Certificates", index=False)
+                df_blotter.to_excel(writer, sheet_name="Blotters", index=False)
+                df_resident_user.to_excel(writer, sheet_name="Officials", index=False)
+
+            QMessageBox.information(self.view, "Export Successful", f"Data saved to:\n{file_path}")
+
+        except Exception as e:
+            # Handle any errors
+            QMessageBox.critical(self.view, "Export Failed", str(e))
+
+    def create_backup(self):
+        pass
+
+    def view_backup(self):
+        pass
+
+    def switch_backup(self):
+        pass
+        
+    
 
 
 
