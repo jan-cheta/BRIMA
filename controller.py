@@ -9,8 +9,8 @@ from view import  BrimaView
 from widgets import BaseWindow, AboutWindow, SettingsWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
-from sqlalchemy import or_, and_, desc, select
-from sqlalchemy.orm import aliased
+from sqlalchemy import or_, and_, desc, select, create_engine
+from sqlalchemy.orm import aliased, sessionmaker, declarative_base
 
 import os
 import shutil
@@ -1433,6 +1433,8 @@ class SettingsWindowControl:
         self.view.btSave.clicked.connect(self.save_changes)
         self.view.btRevert.clicked.connect(self.revert_changes)
         self.view.btExport.clicked.connect(self.export_csv)
+        self.view.btCreateBackup.clicked.connect(self.backup_database)
+        self.view.btViewBackup.clicked.connect(self.switch_database)
     
     def load_data(self):
         barangay = self.session.query(Barangay).first()
@@ -1603,17 +1605,88 @@ class SettingsWindowControl:
             # Handle any errors
             QMessageBox.critical(self.view, "Export Failed", str(e))
 
-    def create_backup(self):
-        pass
+    def backup_database(self):
+        try:
+            # Ask the user to select a folder to save the backup
+            folder_path = QFileDialog.getExistingDirectory(
+                self.view,
+                "Select Folder to Save Backup",
+                os.path.expanduser("~")  # Default to user's home directory
+            )
 
-    def view_backup(self):
-        pass
+            if not folder_path:
+                return  # User cancelled
 
-    def switch_backup(self):
-        pass
-        
-    
+            # Get the current timestamp to append to the backup file name
+            timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            backup_filename = f"database_backup_{timestamp}.sqlite"
 
+            # Specify the source (current database file) and the destination (selected folder)
+            source_db_path = "main.sqlite"  # Adjust with the actual path
+            destination_db_path = os.path.join(folder_path, backup_filename)
 
+            # Copy the database to the selected folder
+            shutil.copy(source_db_path, destination_db_path)
 
-        
+            # Show a message confirming the backup was successful
+            QMessageBox.information(self.view, "Backup Successful", f"Database backed up to:\n{destination_db_path}")
+
+        except Exception as e:
+            # Handle any errors
+            QMessageBox.critical(self.view, "Backup Failed", str(e))
+
+    def switch_database(self):
+        try:
+            # Show confirmation dialog with extreme caution warning
+            reply = QMessageBox.warning(
+                self.view,
+                "Extreme Caution!",
+                "You are about to replace the current database with another one. "
+                "This action cannot be undone! Are you sure you want to continue?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            # If the user selects 'No', exit the function
+            if reply == QMessageBox.No:
+                return
+
+            # Ask the user to select the backup database (new database file)
+            db_path, _ = QFileDialog.getOpenFileName(
+                self.view,
+                "Select SQLite Database to Replace Current DB",
+                "",
+                "SQLite Files (*.sqlite *.db *.SQLITE *.DB);;All Files (*)"
+
+            )
+
+            if not db_path:
+                return  # User canceled the operation
+
+            # Confirm with a second caution message before proceeding
+            confirm = QMessageBox.warning(
+                self.view,
+                "Extreme Caution!",
+                "This will overwrite the current database with the selected one. Are you sure?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if confirm == QMessageBox.No:
+                return  # If the user selects 'No', do nothing
+
+            # Copy the selected new database to overwrite the current main.sqlite
+            shutil.copy(db_path, 'main.sqlite')
+
+            # Reinitialize the Database singleton to use the new database
+            db_instance = Database(db_url='sqlite:///main.sqlite')  # Reuse the default database path
+            db_instance.engine.dispose()  # Dispose of the old engine connection
+            db_instance.engine = create_engine(f"sqlite:///{db_path}")  # Set the new database
+            db_instance.Session = sessionmaker(bind=db_instance.engine)  # Rebind the session to the new engine
+
+            # Notify the user
+            QMessageBox.information(None, "Database Switched", "The database has been replaced successfully.")
+
+        except Exception as e:
+            # Handle any errors
+            QMessageBox.critical(None, "Error", f"Failed to switch databases: {str(e)}")

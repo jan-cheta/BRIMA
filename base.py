@@ -4,10 +4,12 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 Base = declarative_base()
 
-database_url = 'sqlite:///brima.db'
+database_url = 'sqlite:///main.sqlite'
 
 class Database:
     _instance = None
+    engine = None
+    Session = None
 
     def __new__(cls, db_url=database_url):
         if not cls._instance:
