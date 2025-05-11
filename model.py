@@ -1,12 +1,14 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from base import Base
+import datetime
 
 class BaseModel(Base):
     __abstract__ = True
     __allow_unmapped__ = True
 
     id = Column(Integer, primary_key=True)
+    date_added = Column(Date, default=datetime.date.today)
 
 class Barangay(BaseModel):
     __tablename__ = 'barangay'
@@ -18,6 +20,7 @@ class Barangay(BaseModel):
 
 class Resident(BaseModel):
     __tablename__ = "residents"
+
 
     first_name = Column(String)
     last_name = Column(String)

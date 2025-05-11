@@ -58,17 +58,18 @@ class HouseholdWindowController:
         
     def refresh(self):
         self.view.set_search_text('')
-        households = self.session.query(Household).order_by(Household.household_name).all()
+        households = self.session.query(Household).order_by(Household.id, Household.date_added).all()
         data = []
         for household in households:
             result = [
                 household.id,
+                household.date_added,
                 household.household_name,
                 f"{household.house_no} {household.street} {household.sitio} {household.landmark}"
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Household Name', 'Address'], data)
+        self.view.load_table(['id', 'Date Added', 'Household Name', 'Address'], data)
     
     def search(self):
         search_text = self.view.get_search_text().lower()  
@@ -82,6 +83,7 @@ class HouseholdWindowController:
             conditions = []
             for term in search_terms:
                 term_filter = or_(
+                    Household.date_added.ilike(f"%{term}%"),
                     Household.household_name.ilike(f"%{term}%"),
                     Household.house_no.ilike(f"%{term}%"),
                     Household.street.ilike(f"%{term}%"),
@@ -93,7 +95,7 @@ class HouseholdWindowController:
             query = query.filter(and_(*conditions))
         
         # Order and execute
-        households = query.order_by(Household.household_name).all()
+        households = query.order_by(Household.id, Household.date_added).all()
         
         data = []
         for household in households:
@@ -106,12 +108,13 @@ class HouseholdWindowController:
             
             result = [
                 household.id,
+                household.date_added,
                 household.household_name,
                 address
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Household Name', 'Address'], data)
+        self.view.load_table(['id', 'Date Added', 'Household Name', 'Address'], data)
     
     def add(self):
             add_form = AddHouseholdForm()
@@ -245,12 +248,12 @@ class ResidentWindowController:
         
     def refresh(self):
         self.view.set_search_text('')
-        residents = self.session.query(Resident).order_by(Resident.last_name, Resident.household_id).all()
+        residents = self.session.query(Resident).order_by(Resident.id, Resident.date_added).all()
         data = []
         for resident in residents:
             full_name = " ".join(filter(None, [resident.first_name, resident.middle_name, resident.suffix]))
             full_name = f"{resident.last_name}, {full_name}".strip()
-    
+
             household = resident.household
             household_name = household.household_name if household else "N/A"
             address_parts = [
@@ -259,11 +262,12 @@ class ResidentWindowController:
                 getattr(household, "sitio", ""),
                 getattr(household, "landmark", "")
             ] if household else []
-    
+
             address = " ".join(filter(None, address_parts))
-    
+
             result = [
                 resident.id,
+                resident.date_added,
                 full_name,
                 resident.role,
                 household_name,
@@ -271,20 +275,19 @@ class ResidentWindowController:
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Full Name', 'Role', 'Household Name', 'Address'], data)
-    
+        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+
     def search(self):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
-    
-        # Start with base query and join household
+
         query = self.session.query(Resident).join(Resident.household)
-    
-        # Apply search filters
+
         if search_terms:
             conditions = []
             for term in search_terms:
                 term_filter = or_(
+                    Resident.date_added.ilike(f"%{term}%"),
                     Resident.first_name.ilike(f"%{term}%"),
                     Resident.middle_name.ilike(f"%{term}%"),
                     Resident.last_name.ilike(f"%{term}%"),
@@ -299,11 +302,8 @@ class ResidentWindowController:
                 conditions.append(term_filter)
             
             query = query.filter(and_(*conditions))
-    
-        # Apply sorting
-        residents = query.order_by(Resident.last_name, Resident.household_id).all()
-    
-        # Format results
+
+        residents = query.order_by(Resident.id, Resident.date_added).all()
         data = []
         for resident in residents:
             full_name = " ".join(filter(None, [
@@ -312,7 +312,7 @@ class ResidentWindowController:
                 resident.suffix
             ]))
             full_name = f"{resident.last_name}, {full_name}".strip()
-    
+
             household = resident.household
             household_name = household.household_name if household else "N/A"
             address_parts = [
@@ -321,20 +321,20 @@ class ResidentWindowController:
                 getattr(household, "sitio", ""),
                 getattr(household, "landmark", "")
             ] if household else []
-    
+
             address = " ".join(filter(None, address_parts))
-    
+
             result = [
                 resident.id,
+                resident.date_added,
                 full_name,
                 resident.role,
                 household_name,
                 address
             ]
             data.append(result)
-    
-        # Load into the view
-        self.view.load_table(['id', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+        
+        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Address'], data)
     
     def add(self):
         add_form = AddResidentForm()
@@ -601,10 +601,9 @@ class UserWindowController:
     
     def refresh(self):
         self.view.set_search_text('')
-        users = self.session.query(User).join(User.resident).order_by(User.position, Resident.last_name).all()
+        users = self.session.query(User).join(User.resident).order_by(User.id, User.date_added).all()
         data = []
         for user in users:
-            
             username = user.username
             position = user.position
             resident = user.resident
@@ -614,49 +613,45 @@ class UserWindowController:
                 getattr(resident, "last_name", ""),
                 getattr(resident, "suffix", "")
             ] if resident else []
-    
+
             full_name = " ".join(filter(None, resident_name))
-    
+
             result = [
                 user.id,
+                user.date_added,
                 username,
                 position,
-                full_name,
+                full_name
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Username', 'Position', 'Full Name'], data)
-        
+        self.view.load_table(['id', 'Date Added', 'Username', 'Position', 'Full Name'], data)
+
     def search(self):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
-    
-        # Start with base query and join household
+
         query = self.session.query(User).join(User.resident)
-    
-        # Apply search filters
+
         if search_terms:
             conditions = []
             for term in search_terms:
                 term_filter = or_(
+                    User.date_added.ilike(f"%{term}%"),
+                    User.username.ilike(f"%{term}%"),
+                    User.position.ilike(f"%{term}%"),
                     Resident.first_name.ilike(f"%{term}%"),
                     Resident.middle_name.ilike(f"%{term}%"),
                     Resident.last_name.ilike(f"%{term}%"),
-                    Resident.suffix.ilike(f"%{term}%"),
-                    User.username.ilike(f"%{term}%"),
-                    User.position.ilike(f"%{term}%"),
+                    Resident.suffix.ilike(f"%{term}%")
                 )
                 conditions.append(term_filter)
             
             query = query.filter(and_(*conditions))
-    
-        # Apply sorting
-        users = query.order_by(User.position, Resident.last_name).all()
-    
-        # Format results
+
+        users = query.order_by(User.id, User.date_added).all()
         data = []
         for user in users:
-            
             username = user.username
             position = user.position
             resident = user.resident
@@ -666,18 +661,19 @@ class UserWindowController:
                 getattr(resident, "last_name", ""),
                 getattr(resident, "suffix", "")
             ] if resident else []
-    
+
             full_name = " ".join(filter(None, resident_name))
-    
+
             result = [
                 user.id,
+                user.date_added,
                 username,
                 position,
-                full_name,
+                full_name
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Username', 'Position', 'Full Name'], data)
+        self.view.load_table(['id', 'Date Added', 'Username', 'Position', 'Full Name'], data)
     
     def add(self):
         add_form = AddUserForm()
@@ -1516,6 +1512,7 @@ class SettingsWindowControl:
             stmt_resident_household = (
                 select(
                     Resident.id.label("resident_id"),
+                    Resident.date_added,
                     Resident.first_name,
                     Resident.last_name,
                     Resident.middle_name,
