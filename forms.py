@@ -193,10 +193,35 @@ class BrowseHouseholdForm(QDialog):
         self.form.tbStreet.setReadOnly(True)
         self.form.cbSitio.setDisabled(True)
         self.form.tbLandmark.setReadOnly(True)
-        
+
+        self.table = QTableWidget()
+
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        main_layout.addWidget(self.table)
         main_layout.addStretch()
+
+
+    def load_table(self, headers, data):
+        self.table.clearContents()
+        self.table.setRowCount(len(data))
+        self.table.setColumnCount(len(headers))
+        self.table.setColumnHidden(0, True)
+        self.table.setHorizontalHeaderLabels(headers)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setStretchLastSection(True)
+
+        if not data:
+            return
+        
+        for row, row_data in enumerate(data):
+            for col, col_data in enumerate(row_data):
+                item = QTableWidgetItem(str(col_data))
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, col, item)
     
     def set_fields(self, **kargs):
         self.form.tbHouseholdName.setText(kargs['household_name'])
@@ -736,7 +761,7 @@ class CertificateForm(QWidget):
         self.tbDateIssued = QDateEdit()
         self.tbDateIssued.setCalendarPopup(True)
         self.cbType = QComboBox()
-        self.cbType.addItems(['CLEARANCE', 'INDIGENCY', 'FIRST TIME JOB SEEKER'])
+        self.cbType.addItems(['CLEARANCE', 'INDIGENCY', 'RESIDENCY'])
         self.tbPurpose = QTextEdit()
         
         main_layout.addRow('Name:', self.cbName)
@@ -819,9 +844,12 @@ class BrowseCertificateForm(QDialog):
         self.form.tbDateIssued.setReadOnly(True)
         self.form.cbType.setDisabled(True)
         self.form.tbPurpose.setReadOnly(True)
+
+        self.tbPrint = QPushButton('Print')
         
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
+        main_layout.addWidget(self.tbPrint)
         main_layout.addStretch()
     
     def set_fields(self, **kargs):
