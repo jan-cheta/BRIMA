@@ -297,16 +297,17 @@ class ResidentForm(QWidget):
         other_group = QGroupBox('Other Information')
         other_layout = QFormLayout()
         self.tbOccupation = QLineEdit()
-        self.tbCivilStatus = QLineEdit()
+        self.cbCivilStatus = QComboBox()
+        self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
         self.tbCitizenship = QLineEdit()
         self.cbSex = QComboBox()
-        self.cbSex.addItems(['Male', 'Female', 'Other'])
+        self.cbSex.addItems(['MALE', 'FEMALE', 'OTHER'])
         self.tbEducation = QLineEdit()
         self.tbRemarks = QLineEdit()
         self.cbRole = QComboBox()
         self.cbRole.addItems(['Head', 'Spouse', 'Child'])
         other_layout.addRow('Occupation:', self.tbOccupation)
-        other_layout.addRow('Civil Status:', self.tbCivilStatus)
+        other_layout.addRow('Civil Status:', self.cbCivilStatus)
         other_layout.addRow('Citizenship:', self.tbCitizenship)
         other_layout.addRow('Sex:', self.cbSex)
         other_layout.addRow('Education:', self.tbEducation)
@@ -350,7 +351,8 @@ class AddResidentForm(QDialog):
             'email' : self.form.tbEmail.text(),
             'household' : self.form.cbHousehold.currentText(),
             'occupation' : self.form.tbOccupation.text(),
-            'civil_status' : self.form.tbCivilStatus.text(),
+            'civil_status' : self.form.cbCivilStatus.currentText(),
+            'citizenship' : self.form.tbCitizenship.text(),
             'sex': self.form.cbSex.currentText(),
             'education': self.form.tbEducation.text(),
             'remarks': self.form.tbRemarks.text(),
@@ -396,7 +398,7 @@ class UpdateResidentForm(QDialog):
         self.form.tbEmail.setText(kargs.get('email', ''))
         self.form.cbHousehold.setCurrentText(kargs.get('household', ''))
         self.form.tbOccupation.setText(kargs.get('occupation', ''))
-        self.form.tbCivilStatus.setText(kargs.get('civil_status', ''))
+        self.form.cbCivilStatus.setCurrentText(kargs.get('civil_status', ''))
         self.form.cbSex.setCurrentText(kargs.get('sex', ''))
         self.form.tbEducation.setText(kargs.get('education', ''))
         self.form.tbRemarks.setText(kargs.get('remarks', ''))
@@ -414,7 +416,7 @@ class UpdateResidentForm(QDialog):
             'email' : self.form.tbEmail.text(),
             'household' : self.form.cbHousehold.currentText(),
             'occupation' : self.form.tbOccupation.text(),
-            'civil_status' : self.form.tbCivilStatus.text(),
+            'civil_status' : self.form.cbCivilStatus.currentText(),
             'sex': self.form.cbSex.currentText(),
             'education': self.form.tbEducation.text(),
             'remarks': self.form.tbRemarks.text(),
@@ -440,7 +442,7 @@ class BrowseResidentForm(QDialog):
         self.form.tbEmail.setReadOnly(True)
         self.form.cbHousehold.setDisabled(True)
         self.form.tbOccupation.setReadOnly(True)
-        self.form.tbCivilStatus.setReadOnly(True)
+        self.form.cbCivilStatus.setDisabled(True)
         self.form.cbSex.setDisabled(True)
         self.form.tbEducation.setReadOnly(True)
         self.form.tbRemarks.setReadOnly(True)
@@ -473,7 +475,7 @@ class BrowseResidentForm(QDialog):
         self.form.tbEmail.setText(kargs.get('email', ''))
         self.form.cbHousehold.setCurrentText(kargs.get('household', ''))
         self.form.tbOccupation.setText(kargs.get('occupation', ''))
-        self.form.tbCivilStatus.setText(kargs.get('civil_status', ''))
+        self.form.cbCivilStatus.setText(kargs.get('civil_status', ''))
         self.form.cbSex.setCurrentText(kargs.get('sex', ''))
         self.form.tbEducation.setText(kargs.get('education', ''))
         self.form.tbRemarks.setText(kargs.get('remarks', ''))

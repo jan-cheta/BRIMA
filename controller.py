@@ -9,7 +9,7 @@ from view import  BrimaView
 from widgets import BaseWindow, AboutWindow, SettingsWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
-from sqlalchemy import or_, and_, desc, select, create_engine
+from sqlalchemy import or_, and_, desc, select, create_engine, func
 from sqlalchemy.orm import aliased, sessionmaker, declarative_base
 from docx import Document
 
@@ -59,7 +59,7 @@ class HouseholdWindowController:
         
     def refresh(self):
         self.view.set_search_text('')
-        households = self.session.query(Household).order_by(Household.id, Household.date_added).all()
+        households = self.session.query(Household).order_by(Household.household_name).all()
         data = []
         for household in households:
             result = [
@@ -96,7 +96,7 @@ class HouseholdWindowController:
             query = query.filter(and_(*conditions))
         
         # Order and execute
-        households = query.order_by(Household.id, Household.date_added).all()
+        households = query.order_by(Household.household_name).all()
         
         data = []
         for household in households:
@@ -119,26 +119,50 @@ class HouseholdWindowController:
     
     def add(self):
             add_form = AddHouseholdForm()
-            add_form.addbar.btAdd.clicked.connect(add_form.accept)
+        
+            # Button signals
+            add_form.addbar.btAdd.clicked.connect(lambda: self.on_add_button_click(add_form))
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
-            
+        
             # Execute the form as a modal dialog
-            if add_form.exec() == QDialog.Accepted:
-                # Get the data from the form
-                data = add_form.get_fields()
-                data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
-                
-                new_household = Household(**data)
-                
-                try:
-                    self.session.add(new_household)
-                    self.session.commit()
-                    QMessageBox.information(add_form, "Success", "Household added successfully!")
-                    
-                    self.refresh()
-                except Exception as e:
-                    self.session.rollback()
-                    QMessageBox.critical(self.view, "Error", f"Failed to add household: {str(e)}")
+            add_form.exec()
+    
+    def on_add_button_click(self, add_form):
+        # Get the data from the form
+        data = add_form.get_fields()
+    
+        household_name = data.get("household_name")  # Use get to avoid KeyError
+        
+        if not household_name:  
+            QMessageBox.critical(add_form, "Error", "Household name cannot be empty.")
+            return  # Exit if the household is not selected or invalid
+
+        exist_household = self.session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
+
+        if exist_household:
+            QMessageBox.critical(add_form, "Error", "Household name already exists.")
+            return
+        
+        # Get the Household object from the database using the household ID
+        new_household = Household(
+            household_name = data.get("household_name", ""),
+            house_no = data.get("house_no", ""),
+            street = data.get("street", ""),
+            sitio = data.get("sitio", ""),
+            landmark = data.get("landmark", "")
+        )
+    
+        try:
+            # Add the new resident to the session and commit the transaction
+            self.session.add(new_household)
+            self.session.commit()
+            QMessageBox.information(add_form, "Success", "Household added successfully!")
+            self.refresh() 
+
+            add_form.accept()
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(add_form, "Error", f"Failed to add household: {str(e)}")
 
     
     def edit(self):
@@ -180,6 +204,17 @@ class HouseholdWindowController:
         data = update_form.get_fields()
         data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
         
+        exist_household = self.session.query(Household).filter(func.upper(Household.household_name) == data.get("household_name").upper()).all()
+        
+        if not data.get("household_name"):  
+            QMessageBox.critical(update_form, "Error", "Household name cannot be empty.")
+            return
+
+        if not household.household_name == data.get("household_name"):
+            if exist_household:
+                QMessageBox.critical(update_form, "Error", "Household name already exists.")
+                return
+
         household.household_name = data['household_name']
         household.house_no = data['house_no']
         household.street = data['street']
@@ -264,7 +299,7 @@ class ResidentWindowController:
         
     def refresh(self):
         self.view.set_search_text('')
-        residents = self.session.query(Resident).order_by(Resident.id, Resident.date_added).all()
+        residents = self.session.query(Resident).order_by(Resident.last_name).all()
         data = []
         for resident in residents:
             full_name = " ".join(filter(None, [resident.first_name, resident.middle_name, resident.suffix]))
@@ -319,7 +354,7 @@ class ResidentWindowController:
             
             query = query.filter(and_(*conditions))
 
-        residents = query.order_by(Resident.id, Resident.date_added).all()
+        residents = query.order_by(Resident.last_name).all()
         data = []
         for resident in residents:
             full_name = " ".join(filter(None, [
@@ -387,6 +422,26 @@ class ResidentWindowController:
             QMessageBox.critical(add_form, "Error", f"No matching Household found for '{household_name}'.")
             return  # Exit if no valid household ID is found
         
+        conditions = and_(
+            func.upper(Resident.first_name) == data.get("first_name").upper(),
+            func.upper(Resident.last_name) == data.get("last_name").upper(),
+            func.upper(Resident.middle_name) == data.get("middle_name").upper(),
+            func.upper(Resident.suffix) == data.get("suffix").upper()
+        )
+
+        exist_resident = self.session.query(Resident).filter(conditions).first()
+        if exist_resident:
+            QMessageBox.critical(add_form, "Error", "Resident already exists")
+            return
+        
+        if not data.get("first_name") or not data.get("last_name"):
+            QMessageBox.critical(add_form, "Error", "First name and Last name cannot be empty")
+            return
+        
+        if not data.get("citizenship"):
+            QMessageBox.critical(add_form, "Error", "Citizenship cannot be empty")
+            return
+
         # Get the Household object from the database using the household ID
         household = self.session.query(Household).get(household_id)
     
@@ -517,6 +572,35 @@ class ResidentWindowController:
         household = self.session.query(Household).get(household_id)
         if not household:
             QMessageBox.critical(update_form, "Error", "Selected household does not exist.")
+            return
+        
+        conditions = and_(
+            func.upper(Resident.first_name) == updated_data.get("first_name").upper(),
+            func.upper(Resident.last_name) == updated_data.get("last_name").upper(),
+            func.upper(Resident.middle_name) == updated_data.get("middle_name").upper(),
+            func.upper(Resident.suffix) == updated_data.get("suffix").upper()
+        )
+
+        exist_resident = self.session.query(Resident).filter(conditions).all()
+
+        con = [
+            resident.first_name.upper() == updated_data.get("first_name").upper(),
+            resident.last_name.upper() == updated_data.get("last_name").upper(),
+            resident.middle_name.upper() == updated_data.get("middle_name").upper(),
+            resident.suffix.upper() == updated_data.get("suffix").upper()
+        ]
+        
+        if not all(con):
+            if exist_resident:
+                QMessageBox.critical(update_form, "Error", "Resident already exists")
+                return
+        
+        if not updated_data.get("first_name") or not updated_data.get("last_name"):
+            QMessageBox.critical(update_form, "Error", "First name and Last name cannot be empty")
+            return
+        
+        if not updated_data.get("citizenship"):
+            QMessageBox.critical(update_form, "Error", "Citizenship cannot be empty")
             return
     
         # Update resident fields
