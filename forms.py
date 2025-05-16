@@ -302,7 +302,19 @@ class ResidentForm(QWidget):
         self.tbCitizenship = QLineEdit()
         self.cbSex = QComboBox()
         self.cbSex.addItems(['MALE', 'FEMALE', 'OTHER'])
-        self.tbEducation = QLineEdit()
+        self.cbEducation = QComboBox()
+        self.cbEducation.addItems(
+            [
+                'SOME ELEMENTARY',
+                'ELEMENTARY GRADUATE',
+                'SOME HIGH SCHOOL',
+                'SOME COLLEGE/VOCATIONAL',
+                'COLLEGE GRADUATE',
+                "SOME/COMPLETED MASTER'S DEGREE",
+                'MASTERS GRADUATE',
+                'VOCATIONAL/TVET'
+            ]
+        )
         self.tbRemarks = QLineEdit()
         self.cbRole = QComboBox()
         self.cbRole.addItems(['Head', 'Spouse', 'Child'])
@@ -310,7 +322,7 @@ class ResidentForm(QWidget):
         other_layout.addRow('Civil Status:', self.cbCivilStatus)
         other_layout.addRow('Citizenship:', self.tbCitizenship)
         other_layout.addRow('Sex:', self.cbSex)
-        other_layout.addRow('Education:', self.tbEducation)
+        other_layout.addRow('Education:', self.cbEducation)
         other_layout.addRow('Remarks:', self.tbRemarks)
         other_layout.addRow('Role:', self.cbRole)
         other_group.setLayout(other_layout)
@@ -354,7 +366,7 @@ class AddResidentForm(QDialog):
             'civil_status' : self.form.cbCivilStatus.currentText(),
             'citizenship' : self.form.tbCitizenship.text(),
             'sex': self.form.cbSex.currentText(),
-            'education': self.form.tbEducation.text(),
+            'education': self.form.cbEducation.currentText(),
             'remarks': self.form.tbRemarks.text(),
             'role': self.form.cbRole.currentText()
         }
@@ -400,7 +412,7 @@ class UpdateResidentForm(QDialog):
         self.form.tbOccupation.setText(kargs.get('occupation', ''))
         self.form.cbCivilStatus.setCurrentText(kargs.get('civil_status', ''))
         self.form.cbSex.setCurrentText(kargs.get('sex', ''))
-        self.form.tbEducation.setText(kargs.get('education', ''))
+        self.form.cbEducation.setCurrentText(kargs.get('education', ''))
         self.form.tbRemarks.setText(kargs.get('remarks', ''))
         self.form.cbRole.setCurrentText(kargs.get('role', ''))
     
@@ -418,7 +430,7 @@ class UpdateResidentForm(QDialog):
             'occupation' : self.form.tbOccupation.text(),
             'civil_status' : self.form.cbCivilStatus.currentText(),
             'sex': self.form.cbSex.currentText(),
-            'education': self.form.tbEducation.text(),
+            'education': self.form.cbEducation.currentText(),
             'remarks': self.form.tbRemarks.text(),
             'role': self.form.cbRole.currentText()
         }
@@ -444,7 +456,7 @@ class BrowseResidentForm(QDialog):
         self.form.tbOccupation.setReadOnly(True)
         self.form.cbCivilStatus.setDisabled(True)
         self.form.cbSex.setDisabled(True)
-        self.form.tbEducation.setReadOnly(True)
+        self.form.cbEducation.setDisabled(True)
         self.form.tbRemarks.setReadOnly(True)
         self.form.cbRole.setDisabled(True)
         
@@ -477,7 +489,7 @@ class BrowseResidentForm(QDialog):
         self.form.tbOccupation.setText(kargs.get('occupation', ''))
         self.form.cbCivilStatus.setText(kargs.get('civil_status', ''))
         self.form.cbSex.setCurrentText(kargs.get('sex', ''))
-        self.form.tbEducation.setText(kargs.get('education', ''))
+        self.form.cbEducation.setCurrentText(kargs.get('education', ''))
         self.form.tbRemarks.setText(kargs.get('remarks', ''))
         self.form.cbRole.setCurrentText(kargs.get('role', ''))
         
@@ -532,6 +544,7 @@ class AddUserForm(QDialog):
             'name' : self.form.cbName.currentText(),
             'username' : self.form.tbUserName.text(),
             'password' : self.form.tbPassword.text(),
+            'confirm_password': self.form.tbConfirmPassword.text(),
             'position' : self.form.cbPosition.currentText()
         }
         
@@ -597,7 +610,8 @@ class BlotterForm(QWidget):
         
         self.tbRecordDate = QDateEdit()
         self.tbRecordDate.setCalendarPopup(True)
-        self.tbStatus = QLineEdit()
+        self.cbStatus = QComboBox()
+        self.cbStatus.addItems(['OPEN', 'CLOSED'])
         self.tbActionTaken = QLineEdit()
         self.tbNatureOfDispute = QLineEdit()
         self.tbComplainant = QLineEdit()
@@ -605,7 +619,7 @@ class BlotterForm(QWidget):
         self.tbFullReport = QTextEdit()
         
         main_layout.addRow('Record Date:', self.tbRecordDate)
-        main_layout.addRow('Status:', self.tbStatus)
+        main_layout.addRow('Status:', self.cbStatus)
         main_layout.addRow('Action Taken:', self.tbActionTaken)
         main_layout.addRow('Nature of Dispute:', self.tbNatureOfDispute)
         main_layout.addRow('Complainant:', self.tbComplainant)
@@ -640,7 +654,7 @@ class AddBlotterForm(QDialog):
             qrecord_date = QDate.currentDate()
         
         self.form.tbRecordDate.setDate(qrecord_date)
-        self.form.tbStatus.setText(kargs.get('status', ''))
+        self.form.cbStatus.setCurrentText(kargs.get('status', ''))
         self.form.tbActionTaken.setText(kargs.get('action_taken', ''))
         self.form.tbNatureOfDispute.setText(kargs.get('nature_of_dispute', ''))
         self.form.tbComplainant.setText(kargs.get('complainant', ''))
@@ -650,7 +664,7 @@ class AddBlotterForm(QDialog):
     def get_fields(self):
         return {
             'record_date': self.form.tbRecordDate.date().toPython(),
-            'status': self.form.tbStatus.text(),
+            'status': self.form.cbStatus.currentText(),
             'action_taken': self.form.tbActionTaken.text(),
             'nature_of_dispute': self.form.tbNatureOfDispute.text(),
             'complainant': self.form.tbComplainant.text(),
@@ -686,7 +700,7 @@ class UpdateBlotterForm(QDialog):
             qrecord_date = QDate.currentDate()
         
         self.form.tbRecordDate.setDate(qrecord_date)
-        self.form.tbStatus.setText(kargs.get('status', ''))
+        self.form.cbStatus.setCurrentText(kargs.get('status', ''))
         self.form.tbActionTaken.setText(kargs.get('action_taken', ''))
         self.form.tbNatureOfDispute.setText(kargs.get('nature_of_dispute', ''))
         self.form.tbComplainant.setText(kargs.get('complainant', ''))
@@ -696,7 +710,7 @@ class UpdateBlotterForm(QDialog):
     def get_fields(self):
         return {
             'record_date': self.form.tbRecordDate.date().toPython(),
-            'status': self.form.tbStatus.text(),
+            'status': self.form.cbStatus.currentText(),
             'action_taken': self.form.tbActionTaken.text(),
             'nature_of_dispute': self.form.tbNatureOfDispute.text(),
             'complainant': self.form.tbComplainant.text(),
@@ -714,7 +728,7 @@ class BrowseBlotterForm(QDialog):
         self.form = BlotterForm()
         
         self.form.tbRecordDate.setReadOnly(True)
-        self.form.tbStatus.setReadOnly(True)
+        self.form.cbStatus.setDisabled(True)
         self.form.tbActionTaken.setReadOnly(True)
         self.form.tbNatureOfDispute.setReadOnly(True)
         self.form.tbComplainant.setReadOnly(True)
@@ -738,7 +752,7 @@ class BrowseBlotterForm(QDialog):
             qrecord_date = QDate.currentDate()
         
         self.form.tbRecordDate.setDate(qrecord_date)
-        self.form.tbStatus.setText(kargs.get('status', ''))
+        self.form.cbStatus.setCurrentText(kargs.get('status', ''))
         self.form.tbActionTaken.setText(kargs.get('action_taken', ''))
         self.form.tbNatureOfDispute.setText(kargs.get('nature_of_dispute', ''))
         self.form.tbComplainant.setText(kargs.get('complainant', ''))

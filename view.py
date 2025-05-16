@@ -99,12 +99,3 @@ class BrimaView(QWidget):
 
         # Content Integration to Main Layout
         main_layout.addWidget(content)
-
-
-# TODO: Archive View
-class ArchiveView(QWidget):
-    pass
-
-# TODO: Login View
-class LoginView(QWidget):
-    pass

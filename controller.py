@@ -166,7 +166,11 @@ class HouseholdWindowController:
 
     
     def edit(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Household to Edit')
+            return
         if row_id:
             household = self.session.query(Household).get(row_id)
             
@@ -231,7 +235,11 @@ class HouseholdWindowController:
         update_form.accept()   
         
     def browse(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Household to Browse')
+            return
         if row_id:
             household = self.session.query(Household).get(row_id)
             
@@ -265,7 +273,11 @@ class HouseholdWindowController:
         
     
     def delete(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Household to Delete')
+            return
         if row_id:
             household = self.session.query(Household).get(row_id)
             if household:
@@ -485,7 +497,11 @@ class ResidentWindowController:
         
     
     def edit(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Resident to Edit')
+            return
         if row_id:
             resident = self.session.query(Resident).get(row_id)
     
@@ -630,7 +646,11 @@ class ResidentWindowController:
             QMessageBox.critical(update_form, "Error", f"Failed to update resident: {str(e)}")
         
     def browse(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Resident to Browse')
+            return
         if row_id:
             resident = self.session.query(Resident).get(row_id)
             
@@ -667,7 +687,11 @@ class ResidentWindowController:
         
     
     def delete(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Resident to Delete')
+            return
         if row_id:
             resident = self.session.query(Resident).get(row_id)
             if resident:
@@ -803,6 +827,23 @@ class UserWindowController:
     
     def on_add_button_click(self, add_form, resident_dict):
         data = add_form.get_fields()
+
+        if not data.get('username'):
+            QMessageBox.critical(add_form, 'Error', 'Username cannot be empty')
+            return
+        
+        exist_username = self.session.query(User).filter(User.username == data.get('username')).first()
+
+        if exist_username:
+            QMessageBox.critical(add_form, 'Error', 'Username already taken')
+            return
+        
+        if not data.get('password'):
+            QMessageBox.critical(add_form, 'Error', 'Password cannot be empty')
+            return
+        
+        if not data.get('confirm_password') == data.get('password'):
+            QMessageBox.critical(add_form, 'Error', 'Password do not match')
     
         resident_name = data.get("name")
         if not resident_name:  
@@ -818,6 +859,8 @@ class UserWindowController:
     
         # Remove the 'household' key from the data dictionary since it's already handled
         del data['name']
+
+        del data['confirm_password']
     
         # Uppercase all string values in data (excluding non-string types)
         data = {key: value.upper() if isinstance(value, str) and key != 'username' and key != 'password' else value for key, value in data.items()}
@@ -842,7 +885,11 @@ class UserWindowController:
             add_form.raise_()    
     
     def edit(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select User to Edit')
+            return
         if row_id:
             user = self.session.query(User).get(row_id)
     
@@ -911,7 +958,26 @@ class UserWindowController:
         # Map household name to ID
         resident_name = update_form.form.cbName.currentText()
         resident_id = resident_dict.get(resident_name)
-    
+
+
+        if not updated_data.get('username'):
+            QMessageBox.critical(update_form, 'Error', 'Username cannot be empty')
+            return
+        
+        if not updated_data.get('username') == user.username:
+            exist_username = self.session.query(User).filter(User.username == updated_data.get('username')).first()
+
+            if exist_username:
+                QMessageBox.critical(update_form, 'Error', 'Username already taken')
+                return
+        
+        if not updated_data.get('password'):
+            QMessageBox.critical(update_form, 'Error', 'Password cannot be empty')
+            return
+        
+        if not updated_data.get('confirm_password') == updated_data.get('password'):
+            QMessageBox.critical(update_form, 'Error', 'Password do not match')
+
         if not resident_name:
             QMessageBox.critical(update_form, "Error", "Please select a valid resident.")
             return
@@ -937,7 +1003,11 @@ class UserWindowController:
             QMessageBox.critical(update_form, "Error", f"Failed to update User: {str(e)}")
         
     def browse(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select User to Browse')
+            return
         if row_id:
             user = self.session.query(User).get(row_id)
             
@@ -962,7 +1032,11 @@ class UserWindowController:
                 browse_form.exec()
     
     def delete(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select User to Delete')
+            return
         if row_id:
             user = self.session.query(User).get(row_id)
             if user:
@@ -1052,31 +1126,51 @@ class BlotterWindowController:
     
     def add(self):
             add_form = AddBlotterForm()
-            add_form.addbar.btAdd.clicked.connect(add_form.accept)
+            add_form.addbar.btAdd.clicked.connect(self.on_add_button_click(add_form))
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
             add_form.form.tbRecordDate.setDate(QDate.currentDate())
             
             # Execute the form as a modal dialog
-            if add_form.exec() == QDialog.Accepted:
-                # Get the data from the form
-                data = add_form.get_fields()
-                data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
-                
-                new_blotter = Blotter(**data)
-                
-                try:
-                    self.session.add(new_blotter)
-                    self.session.commit()
-                    QMessageBox.information(add_form, "Success", "Blotter added successfully!")
-                    
-                    self.refresh()
-                except Exception as e:
-                    self.session.rollback()
-                    QMessageBox.critical(self.view, "Error", f"Failed to add blotter: {str(e)}")
+            add_form.exec()
 
-    
+    def on_add_button_click(self, add_form):
+        data = add_form.get_fields()
+        data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
+        
+        if not data.get('nature_of_dispute'):
+            QMessageBox.critical(add_form ,'Error', 'Nature of Dispute cannot be empty')
+            return
+
+        if not data.get('complainant'):
+            QMessageBox.critical(add_form ,'Error', 'Complainant cannot be empty')
+            return
+        
+        if not data.get('respondent'):
+            QMessageBox.critical(add_form ,'Error', 'Respondent cannot be empty')
+            return
+        
+        if not data.get('full_report'):
+            QMessageBox.critical(add_form ,'Error', 'Report cannot be empty')
+            return
+
+        new_blotter = Blotter(**data)
+        
+        try:
+            self.session.add(new_blotter)
+            self.session.commit()
+            QMessageBox.information(add_form, "Success", "Blotter added successfully!")
+            add_form.accept()
+            self.refresh()
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(add_form, "Error", f"Failed to add blotter: {str(e)}")
+        
     def edit(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Blotter to Edit')
+            return
         if row_id:
             blotter = self.session.query(Blotter).get(row_id)
             
@@ -1118,6 +1212,22 @@ class BlotterWindowController:
         data = update_form.get_fields()
         data = {key: value.upper() if isinstance(value, str) else value for key, value in data.items()}
         
+        if not data.get('nature_of_dispute'):
+            QMessageBox.critical(update_form ,'Error', 'Nature of Dispute cannot be empty')
+            return
+
+        if not data.get('complainant'):
+            QMessageBox.critical(update_form ,'Error', 'Complainant cannot be empty')
+            return
+        
+        if not data.get('respondent'):
+            QMessageBox.critical(update_form ,'Error', 'Respondent cannot be empty')
+            return
+        
+        if not data.get('full_report'):
+            QMessageBox.critical(update_form ,'Error', 'Report cannot be empty')
+            return
+
         blotter.record_date = data['record_date']
         blotter.status = data['status']
         blotter.action_taken = data['action_taken']
@@ -1136,7 +1246,11 @@ class BlotterWindowController:
         update_form.accept()   
         
     def browse(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Blotter to Browse')
+            return
         if row_id:
             blotter = self.session.query(Blotter).get(row_id)
             
@@ -1157,7 +1271,11 @@ class BlotterWindowController:
         
     
     def delete(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Blotter to Delete')
+            return
         if row_id:
             blotter = self.session.query(Blotter).get(row_id)
             if blotter:
@@ -1301,6 +1419,23 @@ class CertificateWindowController:
     
     def on_add_button_click(self, add_form, resident_dict):
         data = add_form.get_fields()
+
+        if not data.get('purpose'):
+            QMessageBox.critical(add_form, 'Error', 'Purpose cannot be empty')
+            return
+        
+        exist_username = self.session.query(User).filter(User.username == data.get('username')).first()
+
+        if exist_username:
+            QMessageBox.critical(add_form, 'Error', 'Username already taken')
+            return
+        
+        if not data.get('password'):
+            QMessageBox.critical(add_form, 'Error', 'Password cannot be empty')
+            return
+        
+        if not data.get('confirm_password') == data.get('password'):
+            QMessageBox.critical(add_form, 'Error', 'Password do not match')
     
         resident_name = data.get("name")
         if not resident_name:  
@@ -1340,7 +1475,11 @@ class CertificateWindowController:
             add_form.raise_()    
     
     def edit(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Certificate to Edit')
+            return
         if row_id:
             certificate = self.session.query(Certificate).get(row_id)
     
@@ -1411,6 +1550,10 @@ class CertificateWindowController:
         # Map household name to ID
         resident_name = update_form.form.cbName.currentText()
         resident_id = resident_dict.get(resident_name)
+
+        if not updated_data.get('purpose'):
+            QMessageBox.critical(update_form, 'Error', 'Purpose cannot be empty')
+            return
     
         if not resident_name:
             QMessageBox.critical(update_form, "Error", "Please select a valid resident.")
@@ -1437,7 +1580,11 @@ class CertificateWindowController:
             QMessageBox.critical(update_form, "Error", f"Failed to update Certificate: {str(e)}")
         
     def browse(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Certificate to Browse')
+            return
         if row_id:
             certificate = self.session.query(Certificate).get(row_id)
             
@@ -1576,7 +1723,11 @@ class CertificateWindowController:
             process_section(section)
         
     def delete(self):
-        row_id = self.view.get_table_row()
+        try:
+            row_id = self.view.get_table_row()
+        except:
+            QMessageBox.warning(self.view, 'Select Row', 'Please Select Certificate to Delete')
+            return
         if row_id:
             certificate = self.session.query(Certificate).get(row_id)
             if certificate:
