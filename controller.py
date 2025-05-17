@@ -3,9 +3,9 @@ from model import Household, Resident, User, Blotter, Certificate, Barangay
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
     UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
-    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm, LoginForm
+    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
 )
-from view import  BrimaView
+from view import  BrimaView, MainView, LoginView
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
@@ -23,29 +23,44 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-class LoginController:
-    def __init__(self, view :LoginForm):
+
+class MainController:
+    def __init__(self, view: MainView):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
         self.user = None
+        self.brima = self.view.brima
+        self.brima_control = BrimaController(self.brima, None)
+        self.view.login.btLogin.clicked.connect(self.login)
+        self.brima.btLogout.clicked.connect(self.logout)
+        self.view.stack.setCurrentIndex(0)
 
-        self.view.btLogin.clicked.connect(self.login)
-    
     def login(self):
-        data = self.view.get_fields()
+        data = self.view.login.get_fields()
         user = self.session.query(User).filter(and_(User.username==data.get('username'), User.password==data.get('password'))).first()
 
         if user:
             QMessageBox.information(self.view, 'Success', 'Login Sucessful')
-            self.view.accept()
+            self.view.login.tbUsername.clear()
+            self.view.login.tbPassword.clear()
             self.user = user
+            self.brima_control.user = self.user
+            self.brima_control.set_titles()
+            self.brima_control.apply_permissions()
+            self.view.stack.setCurrentIndex(1)
+            self.brima.stack.setCurrentIndex(7)
+            self.view.showMaximized()
         else:
             QMessageBox.critical(self.view, 'Invalid Credentials', 'Please input valid credentials')
-
-
-
-class MainController:
+    
+    def logout(self):
+        self.brima_control.user = None
+        self.view.stack.setCurrentIndex(0)
+        self.view.showNormal()
+    
+    
+class BrimaController:
     def __init__(self, view : BrimaView, user):
         self.db = Database()
         self.session = self.db.get_session()
@@ -71,12 +86,11 @@ class MainController:
         self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
         self.view.btDashboard.clicked.connect(lambda: self.view.stack.setCurrentIndex(7))
         self.view.btDashboard.clicked.connect(self.dashboard_control.load_data)
-        self.view.btLogout.clicked.connect(self.logout)
-
-        self.apply_permissions()
-
         self.view.stack.setCurrentIndex(7)
-        self.view.lbUser.setText(f"HELLO {user.resident.first_name} {user.resident.last_name}.")
+
+    
+    def set_titles(self):
+        self.view.lbUser.setText(f"HELLO {self.user.resident.first_name} {self.user.resident.last_name}.")
         barangay = self.session.query(Barangay).first()
         self.view.lbBrgy.setText(f"{barangay.name}")
     
@@ -98,20 +112,19 @@ class MainController:
             
             for btn in (self.view.settings_window.edit_barangay, self.view.settings_window.backup):
                 btn.setEnabled(False)
-    
-    def logout(self):
-        self.view.close()
-
-        # Relaunch login dialog
-        login_form = LoginForm()
-        login_controller = LoginController(login_form)
-        login_form.exec()
-
-        if login_form.result() == QDialog.Accepted:
-            user = login_controller.user
-            new_view = BrimaView()
-            new_controller = MainController(new_view, user)
-            new_view.showMaximized()
+        else:
+            for win in (
+                self.view.household_window,
+                self.view.resident_window,
+                self.view.blotter_window,
+                self.view.certificate_window,
+                self.view.admin_window,
+            ):
+                for btn in (win.btAdd, win.btEdit, win.btDelete):
+                    btn.setVisible(True)
+            
+            for btn in (self.view.settings_window.edit_barangay, self.view.settings_window.backup):
+                btn.setEnabled(True)
 
 
 class HouseholdWindowController:
@@ -608,6 +621,7 @@ class ResidentWindowController:
                     household=resident.household.household_name if resident.household else '',
                     occupation=resident.occupation,
                     civil_status=resident.civil_status,
+                    citizenship=resident.citizenship,
                     education=resident.education,
                     remarks=resident.remarks,
                     sex=resident.sex,
@@ -628,6 +642,7 @@ class ResidentWindowController:
                         household=resident.household.household_name if resident.household else '',
                         occupation=resident.occupation,
                         civil_status=resident.civil_status,
+                        citizenship=resident.citizenship,
                         education=resident.education,
                         remarks=resident.remarks,
                         sex=resident.sex,
@@ -700,12 +715,13 @@ class ResidentWindowController:
         resident.phone1 = updated_data["phone1"]
         resident.phone2 = updated_data["phone2"]
         resident.email = updated_data["email"]
-        resident.occupation = updated_data["occupation"]
-        resident.civil_status = updated_data["civil_status"]
-        resident.education = updated_data["education"]
-        resident.remarks = updated_data["remarks"]
-        resident.sex = updated_data["sex"]
-        resident.role = updated_data["role"]
+        resident.occupation = updated_data["occupation"].upper()
+        resident.civil_status = updated_data["civil_status"].upper()
+        resident.citizenship = updated_data['citizenship'].upper()
+        resident.education = updated_data["education"].upper()
+        resident.remarks = updated_data["remarks"].upper()
+        resident.sex = updated_data["sex"].upper()
+        resident.role = updated_data["role"].upper()
         resident.household = household
     
         try:
@@ -723,6 +739,8 @@ class ResidentWindowController:
         except:
             QMessageBox.warning(self.view, 'Select Row', 'Please Select Resident to Browse')
             return
+        
+        print('hello')
         if row_id:
             resident = self.session.query(Resident).get(row_id)
             
@@ -741,6 +759,7 @@ class ResidentWindowController:
                     household=resident.household.household_name if resident.household else '',
                     occupation=resident.occupation,
                     civil_status=resident.civil_status,
+                    citizenship=resident.citizenship,
                     education=resident.education,
                     remarks=resident.remarks,
                     sex=resident.sex,
@@ -1199,7 +1218,7 @@ class BlotterWindowController:
     
     def add(self):
             add_form = AddBlotterForm()
-            add_form.addbar.btAdd.clicked.connect(self.on_add_button_click(add_form))
+            add_form.addbar.btAdd.clicked.connect(lambda: self.on_add_button_click(add_form))
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
             add_form.form.tbRecordDate.setDate(QDate.currentDate())
             
