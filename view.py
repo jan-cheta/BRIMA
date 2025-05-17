@@ -1,5 +1,8 @@
 from PySide6.QtWidgets import (QWidget, QStackedWidget, QFormLayout, QHBoxLayout, QVBoxLayout,
                                QLabel, QLineEdit, QComboBox, QDateEdit, QPushButton, QTableWidget, QTableWidgetItem)
+from PySide6.QtCore import QSize
+from PySide6.QtGui import QIcon
+
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 
 class BrimaView(QWidget):
@@ -40,22 +43,39 @@ class BrimaView(QWidget):
 
         self.btDashboard = QPushButton('Dahsboard')
         self.btDashboard.setObjectName('btDashboard')
+        self.icon_helper(self.btDashboard, ":/icnDashboardBlack")
+
         self.btAboutUs = QPushButton('About Us')        
         self.btAboutUs.setObjectName('btAboutUs')
+        self.icon_helper(self.btAboutUs, ":/icnAboutBlack")
+
         self.btHousehold = QPushButton('Household')
         self.btHousehold.setObjectName('btHousehold')
+        self.icon_helper(self.btHousehold, ":/icnHouseholdBlack")
+
         self.btResident = QPushButton('Resident')
         self.btResident.setObjectName('btResident')
+        self.icon_helper(self.btResident, ":/icnResidentsBlack")
+
         self.btBlotter = QPushButton('Blotter')
         self.btBlotter.setObjectName('btBlotter')
+        self.icon_helper(self.btBlotter, ":/icnBlotterBlack")
+
         self.btCertificate = QPushButton('Certificate')
         self.btCertificate.setObjectName('btCertificate')
+        self.icon_helper(self.btCertificate, ':/icnCertificateBlack')
+
         self.btAdmin = QPushButton('Admin')
         self.btAdmin.setObjectName('btAdmin')
+        self.icon_helper(self.btAdmin, ':/icnAdminBlack')
+        
         self.btSettings = QPushButton('Settings')
         self.btSettings.setObjectName('btSettings')
+        self.icon_helper(self.btSettings, ':/icnSettingsBlack')
+
         self.btLogout = QPushButton('Logout')
         self.btLogout.setObjectName('btLogout')
+        self.icon_helper(self.btLogout, ':/icnLogoutBlack')
 
         sidebar_layout.addWidget(self.btDashboard)
         sidebar_layout.addWidget(self.btAboutUs)
@@ -102,3 +122,9 @@ class BrimaView(QWidget):
 
         # Content Integration to Main Layout
         main_layout.addWidget(content)
+    
+    def icon_helper(self, button, path):
+        icon_size = QSize(24, 24)
+        
+        button.setIcon(QIcon(path))
+        button.setIconSize(icon_size)

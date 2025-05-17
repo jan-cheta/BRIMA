@@ -233,7 +233,7 @@ class SettingsWindow(QWidget):
         self.tbHistory = QTextEdit()
         self.tbMission = QTextEdit()
         self.tbVision = QTextEdit()
-        edit_barangay_form_layout.addRow('Barangay Name: ', self.tbBarangayName)
+        edit_barangay_form_layout.addRow('Barangay Name (Please Include Municipality/City): ', self.tbBarangayName)
         edit_barangay_form_layout.addRow('History: ', self.tbHistory)
         edit_barangay_form_layout.addRow('Mission: ', self.tbMission)
         edit_barangay_form_layout.addRow('Vision: ', self.tbVision)
@@ -363,3 +363,4 @@ class DashboardWindow(QWidget):
         main_layout.addWidget(scroll_area)
 
         self.setMinimumSize(800, 600)
+

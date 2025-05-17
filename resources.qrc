@@ -6,6 +6,15 @@
         <file alias="refresh">icons/refresh.svg</file>
         <file alias="search">icons/search.svg</file>
         <file alias="browse">icons/browse.svg</file>
-        <file alias="about">icons/About.png</file>
+        <file alias="login">icons/login.svg</file>
+        <file alias="icnAboutBlack">icons/icnAboutBlack.png</file>
+        <file alias="icnAdminBlack">icons/icnAdminBlack.png</file>
+        <file alias="icnBlotterBlack">icons/icnBlotterBlack.png</file>
+        <file alias="icnCertificateBlack">icons/icnCertificateBlack.png</file>
+        <file alias="icnDashboardBlack">icons/icnDashboardBlack.png</file>
+        <file alias="icnHouseholdBlack">icons/icnHouseholdBlack.png</file>
+        <file alias="icnLogoutBlack">icons/icnLogoutBlack.png</file>
+        <file alias="icnResidentsBlack">icons/icnResidentsBlack.png</file>
+        <file alias="icnSettingsBlack">icons/icnSettingsBlack.png</file>
     </qresource>
 </RCC>

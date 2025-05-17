@@ -3,7 +3,7 @@ from model import Household, Resident, User, Blotter, Certificate, Barangay
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
     UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
-    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
+    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm, LoginForm
 )
 from view import  BrimaView
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
@@ -23,12 +23,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-
-class MainController:
-    def __init__(self, view : BrimaView):
+class LoginController:
+    def __init__(self, view :LoginForm):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
+        self.user = None
+
+        self.view.btLogin.clicked.connect(self.login)
+    
+    def login(self):
+        data = self.view.get_fields()
+        user = self.session.query(User).filter(and_(User.username==data.get('username'), User.password==data.get('password'))).first()
+
+        if user:
+            QMessageBox.information(self.view, 'Success', 'Login Sucessful')
+            self.view.accept()
+            self.user = user
+        else:
+            QMessageBox.critical(self.view, 'Invalid Credentials', 'Please input valid credentials')
+
+
+
+class MainController:
+    def __init__(self, view : BrimaView, user):
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.view = view
+        self.user = user 
+
         self.household_control = HouseholdWindowController(self.view.household_window)
         self.resident_control = ResidentWindowController(self.view.resident_window)
         self.user_control = UserWindowController(self.view.admin_window)
@@ -48,8 +71,47 @@ class MainController:
         self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
         self.view.btDashboard.clicked.connect(lambda: self.view.stack.setCurrentIndex(7))
         self.view.btDashboard.clicked.connect(self.dashboard_control.load_data)
+        self.view.btLogout.clicked.connect(self.logout)
+
+        self.apply_permissions()
 
         self.view.stack.setCurrentIndex(7)
+        self.view.lbUser.setText(f"HELLO {user.resident.first_name} {user.resident.last_name}.")
+        barangay = self.session.query(Barangay).first()
+        self.view.lbBrgy.setText(f"{barangay.name}")
+    
+    def apply_permissions(self):
+        is_admin = (self.user.position in ['CAPTAIN', 'SECRETARY'])
+
+        self.view.btAdmin.setVisible(is_admin)
+
+        if not is_admin:
+            for win in (
+                self.view.household_window,
+                self.view.resident_window,
+                self.view.blotter_window,
+                self.view.certificate_window,
+                self.view.admin_window,
+            ):
+                for btn in (win.btAdd, win.btEdit, win.btDelete):
+                    btn.setVisible(False)
+            
+            for btn in (self.view.settings_window.edit_barangay, self.view.settings_window.backup):
+                btn.setEnabled(False)
+    
+    def logout(self):
+        self.view.close()
+
+        # Relaunch login dialog
+        login_form = LoginForm()
+        login_controller = LoginController(login_form)
+        login_form.exec()
+
+        if login_form.result() == QDialog.Accepted:
+            user = login_controller.user
+            new_view = BrimaView()
+            new_controller = MainController(new_view, user)
+            new_view.showMaximized()
 
 
 class HouseholdWindowController:
@@ -155,11 +217,11 @@ class HouseholdWindowController:
         
         # Get the Household object from the database using the household ID
         new_household = Household(
-            household_name = data.get("household_name", ""),
-            house_no = data.get("house_no", ""),
-            street = data.get("street", ""),
-            sitio = data.get("sitio", ""),
-            landmark = data.get("landmark", "")
+            household_name = data.get("household_name", "").upper(),
+            house_no = data.get("house_no", "").upper(),
+            street = data.get("street", "").upper(),
+            sitio = data.get("sitio", "").upper(),
+            landmark = data.get("landmark", "").upper()
         )
     
         try:
@@ -229,11 +291,11 @@ class HouseholdWindowController:
                 QMessageBox.critical(update_form, "Error", "Household name already exists.")
                 return
 
-        household.household_name = data['household_name']
-        household.house_no = data['house_no']
-        household.street = data['street']
-        household.sitio = data['sitio']
-        household.landmark = data['landmark']
+        household.household_name = data['household_name'].upper()
+        household.house_no = data['house_no'].upper()
+        household.street = data['street'].upper()
+        household.sitio = data['sitio'].upper()
+        household.landmark = data['landmark'].upper()
         
         try:
             self.session.commit()
@@ -907,7 +969,7 @@ class UserWindowController:
                 update_form = UpdateUserForm()
     
                 # Fetch households
-                residents = self.session.query(Resident).filter(Resident.user == None).order_by(Resident.last_name).all()
+                residents = self.session.query(Resident).order_by(Resident.last_name).all()
                 resident_dict = {
                     " ".join(filter(None, [
                         resident.first_name,
@@ -987,6 +1049,7 @@ class UserWindowController:
         
         if not updated_data.get('confirm_password') == updated_data.get('password'):
             QMessageBox.critical(update_form, 'Error', 'Password do not match')
+            return
 
         if not resident_name:
             QMessageBox.critical(update_form, "Error", "Please select a valid resident.")
