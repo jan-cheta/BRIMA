@@ -308,6 +308,7 @@ class ResidentForm(QWidget):
                 'SOME ELEMENTARY',
                 'ELEMENTARY GRADUATE',
                 'SOME HIGH SCHOOL',
+                'HIGH SCHOOL GRADUATE'
                 'SOME COLLEGE/VOCATIONAL',
                 'COLLEGE GRADUATE',
                 "SOME/COMPLETED MASTER'S DEGREE",
@@ -611,7 +612,7 @@ class BlotterForm(QWidget):
         self.tbRecordDate = QDateEdit()
         self.tbRecordDate.setCalendarPopup(True)
         self.cbStatus = QComboBox()
-        self.cbStatus.addItems(['OPEN', 'CLOSED'])
+        self.cbStatus.addItems(['OPEN', 'ONGOING','CLOSED'])
         self.tbActionTaken = QLineEdit()
         self.tbNatureOfDispute = QLineEdit()
         self.tbComplainant = QLineEdit()

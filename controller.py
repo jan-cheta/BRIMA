@@ -6,7 +6,7 @@ from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
 )
 from view import  BrimaView
-from widgets import BaseWindow, AboutWindow, SettingsWindow
+from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
 from sqlalchemy import or_, and_, desc, select, create_engine, func
@@ -16,7 +16,12 @@ from docx import Document
 import os
 import shutil
 from datetime import datetime, date
+
+import matplotlib
+matplotlib.use('QtAgg')  # <-- Add this line first
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 
 class MainController:
@@ -30,7 +35,8 @@ class MainController:
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
         self.about_control = AboutUsWindowController(self.view.about_window)
-        self.settings_control = SettingsWindowControl(self.view.settings_window)
+        self.settings_control = SettingsWindowController(self.view.settings_window)
+        self.dashboard_control = DashbboardWindowController(self.view.dashboard_window)
 
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
@@ -40,6 +46,10 @@ class MainController:
         self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
         self.view.btAboutUs.clicked.connect(self.about_control.load_data)
         self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
+        self.view.btDashboard.clicked.connect(lambda: self.view.stack.setCurrentIndex(7))
+        self.view.btDashboard.clicked.connect(self.dashboard_control.load_data)
+
+        self.view.stack.setCurrentIndex(7)
 
 
 class HouseholdWindowController:
@@ -1784,7 +1794,7 @@ class AboutUsWindowController:
             members = sorted(user_list, key=lambda user: custom_order.index(user['position'].upper()) if user['position'].upper() in custom_order else len(custom_order))
         )
             
-class SettingsWindowControl:
+class SettingsWindowController:
     def __init__(self, view: SettingsWindow):
         self.view = view
         self.db = Database()
@@ -2052,3 +2062,100 @@ class SettingsWindowControl:
         except Exception as e:
             # Handle any errors
             QMessageBox.critical(None, "Error", f"Failed to switch databases: {str(e)}")
+    
+class DashbboardWindowController:
+    def __init__(self, view: DashboardWindow):
+        self.view = view
+        self.db = Database()
+        self.session = self.db.get_session()
+        self.load_data()
+
+    
+    def load_data(self):
+        # Count of entities
+        households = self.session.query(Household).all()
+        residents = self.session.query(Resident).all()
+        blotters = self.session.query(Blotter).all()
+        certificates = self.session.query(Certificate).all()
+
+        self.view.plot_list[0].update_data(
+            categories = ['Households', 'Residents', 'Blotters', 'Certificates'],
+            values = [len(households), len(residents), len(blotters), len(certificates)],
+            title = "Total Number of Entities Recorded"
+        )
+
+        # Sitio Count aggregate (Residents)
+        stmt_sitio = (
+            select(
+                Household.sitio
+            ).join(Resident.household)
+        )
+        df = pd.read_sql(stmt_sitio, self.session.bind)
+        sitio_counts = df["sitio"].value_counts().sort_index()
+        categories = sitio_counts.index.tolist()
+        values = sitio_counts.values.tolist()
+
+        self.view.plot_list[1].update_data(categories, values, title="Resident Sitio Distribution")
+        # Age
+        stmt_age = (
+            select(
+                Resident.date_of_birth
+            )
+        )
+        df = pd.read_sql(stmt_age, self.session.bind)
+        df["date_of_birth"] = pd.to_datetime(df["date_of_birth"])
+        today = pd.Timestamp(datetime.today().date())
+        df["age"] = (today - df["date_of_birth"]).dt.days // 365
+
+        bins = [0, 18, 35, 50, 65, 120]
+        labels = ["0-18", "19-35", "36-50", "51-65", "66+"]
+        df["age_range"] = pd.cut(df["age"], bins=bins, labels=labels, right=True)
+
+        age_counts = df["age_range"].value_counts().sort_index()
+        categories = age_counts.index.tolist()
+        values = age_counts.values.tolist()
+
+        self.view.plot_list[2].update_data(categories, values, title="Resident Age Group Distribution")
+        # Sex
+        stmt_sex = (
+            select(
+                Resident.sex
+            )
+        )
+        df = pd.read_sql(stmt_sex, self.session.bind)
+
+        sex_counts = df["sex"].value_counts().sort_index()
+        categories = sex_counts.index.tolist()
+        values = sex_counts.values.tolist()
+
+        self.view.plot_list[3].update_data(categories, values, title="Resident Gender/Sex Distribution")
+        
+        # Civil Status
+        stmt_education = (
+            select(
+                Resident.civil_status
+            )
+        )
+        df = pd.read_sql(stmt_education, self.session.bind)
+
+        civil_counts = df["civil_status"].value_counts().sort_index()
+        categories = civil_counts.index.tolist()
+        values = civil_counts.values.tolist()
+
+        self.view.plot_list[4].update_data(categories, values, title="Resident Civil Status Distribution")
+        
+        # Blotter
+        stmt_status = (
+            select(
+                Blotter.status
+            )
+        )
+
+        df = pd.read_sql(stmt_status, self.session.bind)
+
+        status_counts = df["status"].value_counts().sort_index()
+        categories = status_counts.index.tolist()
+        values = status_counts.values.tolist()
+
+        self.view.plot_list[5].update_data(categories, values, title="Blotter Status Distribution")
+

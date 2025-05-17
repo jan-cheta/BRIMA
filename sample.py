@@ -14,7 +14,7 @@ def generate_ph_mobile():
 db = Database()
 session = db.get_session()
 
-sitios = ["Sitio Uno", "Sitio Dos", "Sitio Tres", "Purok 4", "Zone 5"]
+sitios = ["CASARATAN", "CABAOANGAN", "TRAMO"]
 landmarks = ["Near Barangay Hall", "Beside Elementary School", "Behind Chapel", "Near Basketball Court"]
 positions = ["Captain", "Secretary", "Treasurer", "Kagawad", "Tanod"]
 
@@ -41,8 +41,17 @@ for i in range(20):
             civil_status=fake.random_element(["Single", "Married", "Widowed", "Divorced"]).upper(),
             citizenship="FILIPINO",
             sex=sex.upper(),
-            education=fake.random_element([
-                "High School", "Bachelor's Degree", "Master's Degree", "PhD", "Associate's Degree"]).upper(),
+            education=fake.random_element( [
+                'SOME ELEMENTARY',
+                'ELEMENTARY GRADUATE',
+                'SOME HIGH SCHOOL',
+                'HIGH SCHOOL GRADUATE'
+                'SOME COLLEGE/VOCATIONAL',
+                'COLLEGE GRADUATE',
+                "SOME/COMPLETED MASTER'S DEGREE",
+                'MASTERS GRADUATE',
+                'VOCATIONAL/TVET'
+            ]).upper(),
             remarks=fake.sentence(nb_words=6).upper(),
             phone1=generate_ph_mobile(),
             phone2=generate_ph_mobile(),

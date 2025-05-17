@@ -1,9 +1,12 @@
 from PySide6.QtWidgets import (QGridLayout, QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLineEdit, QLabel, QTableWidgetItem, QHeaderView, QGroupBox, QTextEdit, QFormLayout, QScrollArea)
+    QLineEdit, QLabel, QTableWidgetItem, QHeaderView, QGroupBox, QTextEdit, QFormLayout, QScrollArea, QSizePolicy)
 from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage
 from PySide6.QtCore import QSize, Qt, QRect
+
+import matplotlib
+matplotlib.use('QtAgg')
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 
 class BaseWindow(QWidget):
     def __init__(self, title):
@@ -288,57 +291,75 @@ class SettingsWindow(QWidget):
         self.tbHistory.setText(kargs.get("history", ''))
         self.tbMission.setText(kargs.get("mission", ''))
         self.tbVision.setText(kargs.get("vision", ''))
+                    
 
+class DataPlotWidget(QWidget):
+    def __init__(self):
+        super().__init__()
 
-
-class ScalableImageWidget(QWidget):
-    
-    def __init__(self, image_path: str, parent=None):
-        super().__init__(parent)
-        self.original_pixmap = QPixmap(image_path)
-        self.scaled_pixmap = None
-        self.setMinimumSize(10, 10)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if not self.original_pixmap.isNull():
-            self.scaled_pixmap = self.original_pixmap.scaled(
-                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-        self.update()
-
-    def paintEvent(self, event):
-        if self.scaled_pixmap:
-            painter = QPainter(self)
-            # Center the scaled pixmap inside the widget
-            x = (self.width() - self.scaled_pixmap.width()) // 2
-            y = (self.height() - self.scaled_pixmap.height()) // 2
-            target_rect = QRect(x, y, self.scaled_pixmap.width(), self.scaled_pixmap.height())
-            painter.drawPixmap(target_rect, self.scaled_pixmap)
-            painter.end()
-            
-
-class ChartWidget(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.figure = Figure(figsize=(5, 4))
+        self.setMinimumHeight(400)
+        self.setMinimumWidth(400)
+        self.figure, self.ax = plt.subplots()
         self.canvas = FigureCanvas(self.figure)
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
 
-    def plot_data(self, labels, values, title="Resident Stats"):
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-        ax.bar(labels, values)
-        ax.set_title(title)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.canvas)
+
+
+
+    def update_data(self, categories, values, title="Updated Plot"):
+        self.ax.clear()
+
+        bars = self.ax.bar(categories, values)
+
+        for bar, value in zip(bars, values):
+            height = bar.get_height()
+            self.ax.text(
+                bar.get_x() + bar.get_width() / 2,  # Center of bar
+                height - (0.05 * height),           # Slightly below the top
+                f"{value}",                         # Label = count
+                ha="center", va="top",              # Align inside the bar
+                color="black"
+            )
+
+        self.ax.set_title(title)
+        self.ax.set_ylabel("Count")
+        self.figure.tight_layout()
         self.canvas.draw()
-        
-# TODO:
+
 class DashboardWindow(QWidget):
     def __init__(self):
         super().__init__()
         
-        main_layout = QGridLayout(self)
-        
-        
+        main_layout = QVBoxLayout(self)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+
+        self.title = QLabel('Dashboard')
+        scroll_layout.addWidget(self.title)
+
+        self.plot_list = []
+
+        for i in range(3):
+            plot_widget = QWidget()
+            plot_widg_layout = QHBoxLayout(plot_widget)
+            for j in range(2):  
+                plot = DataPlotWidget()
+                plot.setMinimumHeight(400)  
+                self.plot_list.append(plot)
+                plot_widg_layout.addWidget(plot)
+            scroll_layout.addWidget(plot_widget)
+
+        scroll_layout.addStretch()  
+        scroll_content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
+
+        self.setMinimumSize(800, 600)
