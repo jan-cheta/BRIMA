@@ -1515,19 +1515,6 @@ class CertificateWindowController:
         if not data.get('purpose'):
             QMessageBox.critical(add_form, 'Error', 'Purpose cannot be empty')
             return
-        
-        exist_username = self.session.query(User).filter(User.username == data.get('username')).first()
-
-        if exist_username:
-            QMessageBox.critical(add_form, 'Error', 'Username already taken')
-            return
-        
-        if not data.get('password'):
-            QMessageBox.critical(add_form, 'Error', 'Password cannot be empty')
-            return
-        
-        if not data.get('confirm_password') == data.get('password'):
-            QMessageBox.critical(add_form, 'Error', 'Password do not match')
     
         resident_name = data.get("name")
         if not resident_name:  
