@@ -234,8 +234,10 @@ class ResidentForm(QWidget):
     def __init__(self):
         super().__init__()
         
-        layout = QVBoxLayout(self)  # Use QVBoxLayout for main layout
+        layout = QHBoxLayout(self)  # Use QVBoxLayout for main layout
 
+        sidestack1 = QWidget()
+        sidelayout1 = QVBoxLayout(sidestack1)
         # Personal Information Section
         personal_group = QGroupBox('Personal Information')
         personal_layout = QFormLayout()
@@ -251,6 +253,7 @@ class ResidentForm(QWidget):
         personal_layout.addRow('Suffix:', self.tbSuffix)
         personal_layout.addRow('Birth Date:', self.tbBirthDate)
         personal_group.setLayout(personal_layout)
+        sidelayout1.addWidget(personal_group)
         
         # Contact Information Section
         contact_group = QGroupBox('Contact Information')
@@ -262,7 +265,11 @@ class ResidentForm(QWidget):
         contact_layout.addRow('Phone 2:', self.tbPhone2)
         contact_layout.addRow('Email:', self.tbEmail)
         contact_group.setLayout(contact_layout)
+        sidelayout1.addWidget(contact_group)
         
+
+        sidestack2 = QWidget()
+        sidelayout2 = QVBoxLayout(sidestack2)
         # Household Information Section
         household_group = QGroupBox('Household Information')
         household_layout = QFormLayout()
@@ -292,6 +299,7 @@ class ResidentForm(QWidget):
         household_layout.addRow('Sitio:', self.cbSitio)
         household_layout.addRow('Landmark:', self.tbLandmark)
         household_group.setLayout(household_layout)
+        sidelayout2.addWidget(household_group)
 
         # Other Information Section
         other_group = QGroupBox('Other Information')
@@ -327,12 +335,11 @@ class ResidentForm(QWidget):
         other_layout.addRow('Remarks:', self.tbRemarks)
         other_layout.addRow('Role:', self.cbRole)
         other_group.setLayout(other_layout)
+        sidelayout2.addWidget(other_group)
 
         # Add sections to the main layout
-        layout.addWidget(personal_group)
-        layout.addWidget(contact_group)
-        layout.addWidget(household_group)
-        layout.addWidget(other_group)
+        layout.addWidget(sidestack1)
+        layout.addWidget(sidestack2)
 
 class AddResidentForm(QDialog):
     def __init__(self):
