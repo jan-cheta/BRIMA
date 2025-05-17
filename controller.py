@@ -13,7 +13,6 @@ from sqlalchemy import or_, and_, desc, select, create_engine, func
 from sqlalchemy.orm import aliased, sessionmaker, declarative_base
 from docx import Document
 
-import sys
 import os
 import shutil
 from datetime import datetime, date
@@ -1709,11 +1708,11 @@ class CertificateWindowController:
 
         try:
             if certificate.type == 'CLEARANCE':
-                template_path = self.resource_path("certificates/Barangay-Clearance-Template.docx")
+                template_path = "certificates/Barangay-Clearance-Template.docx"
             elif certificate.type == 'INDIGENCY':
-                template_path = self.resource_path("certificates/Indigency-Template.docx")
+                template_path = "certificates/Indigency-Template.docx"
             elif certificate.type == 'RESIDENCY':
-                template_path = self.resource_path("certificates/Residency-Template.docx")
+                template_path = "certificates/Residency-Template.docx"
             doc = Document(template_path)
         except Exception as e:
             QMessageBox.critical(form, "Error", f"Could not load DOCX template: {str(e)}")
@@ -1749,12 +1748,6 @@ class CertificateWindowController:
             QMessageBox.information(form, "Success", "Certificate saved successfully.")
         except Exception as e:
             QMessageBox.critical(form, "Error", f"Could not save DOCX file: {str(e)}")
-    
-    def resource_path(self, relative_path):
-        # Works for both PyInstaller and normal script
-        if hasattr(sys, '_MEIPASS'):
-            return os.path.join(sys._MEIPASS, relative_path)
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
     
     def calculate_age(self, date_of_birth: date) -> int:
         today = date.today()
