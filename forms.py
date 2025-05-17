@@ -120,6 +120,7 @@ class HouseholdForm(QWidget):
 class AddHouseholdForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Add Household')
         
         main_layout = QVBoxLayout(self)
         
@@ -151,6 +152,7 @@ class AddHouseholdForm(QDialog):
 class UpdateHouseholdForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Update Household')
         
         main_layout = QVBoxLayout(self)
         
@@ -182,6 +184,7 @@ class UpdateHouseholdForm(QDialog):
 class BrowseHouseholdForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Browse Household')
         
         main_layout = QVBoxLayout(self)
         
@@ -344,6 +347,7 @@ class ResidentForm(QWidget):
 class AddResidentForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Add Resident')
         
         main_layout = QVBoxLayout(self)
         
@@ -382,6 +386,7 @@ class AddResidentForm(QDialog):
 class UpdateResidentForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Update Resident')
         
         main_layout = QVBoxLayout(self)
         
@@ -448,6 +453,7 @@ class UpdateResidentForm(QDialog):
 class BrowseResidentForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Browse Resident')
         
         main_layout = QVBoxLayout(self)
         
@@ -535,6 +541,7 @@ class UserForm(QWidget):
 class AddUserForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Add User')
         
         main_layout = QVBoxLayout(self)
         
@@ -562,6 +569,7 @@ class AddUserForm(QDialog):
 class UpdateUserForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Update User')
         
         main_layout = QVBoxLayout(self)
         
@@ -592,6 +600,7 @@ class UpdateUserForm(QDialog):
 class BrowseUserForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Browse Users')
         
         main_layout = QVBoxLayout(self)
         
@@ -641,6 +650,7 @@ class BlotterForm(QWidget):
 class AddBlotterForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Add Blotter')
         
         main_layout = QVBoxLayout(self)
         
@@ -687,6 +697,7 @@ class AddBlotterForm(QDialog):
 class UpdateBlotterForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Update Blotter')
         
         main_layout = QVBoxLayout(self)
         
@@ -733,6 +744,7 @@ class UpdateBlotterForm(QDialog):
 class BrowseBlotterForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Browse Blotter')
         
         main_layout = QVBoxLayout(self)
         
@@ -800,6 +812,7 @@ class CertificateForm(QWidget):
 class AddCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Add Certificate')
         
         main_layout = QVBoxLayout(self)
         
@@ -826,6 +839,7 @@ class AddCertificateForm(QDialog):
 class UpdateCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Update Certificate')
         
         main_layout = QVBoxLayout(self)
         
@@ -862,6 +876,7 @@ class UpdateCertificateForm(QDialog):
 class BrowseCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Browse Certificate')
         
         main_layout = QVBoxLayout(self)
         
@@ -895,4 +910,3 @@ class BrowseCertificateForm(QDialog):
 
 
 
-        
