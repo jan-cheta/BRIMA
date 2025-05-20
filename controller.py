@@ -18,7 +18,7 @@ import shutil
 from datetime import datetime, date
 
 import matplotlib
-matplotlib.use('QtAgg')  # <-- Add this line first
+matplotlib.use('QtAgg') 
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -1018,7 +1018,6 @@ class UserWindowController:
                 update_form.set_fields(
                     name = full_name,
                     username = user.username,
-                    password = user.password,
                     position = user.position
                 )
     
@@ -1027,7 +1026,6 @@ class UserWindowController:
                     lambda: update_form.set_fields(
                         name = full_name,
                         username = user.username,
-                        password = user.password,
                         position = user.position
                     )
                 )
@@ -1116,7 +1114,6 @@ class UserWindowController:
                 browse_form.set_fields(
                     name = full_name,
                     username = user.username,
-                    password = user.password,
                     position = user.position
                    
                 )

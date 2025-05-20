@@ -161,6 +161,7 @@ class UserPage(QWizardPage):
         self.tbPassword = QLineEdit()
         self.tbConfirmPassword = QLineEdit()
         self.tbPassword.setEchoMode(QLineEdit.EchoMode.Password)
+        self.tbConfirmPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.cbPosition = QComboBox()
         self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"])
         
