@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QApplication, QWizard, QWizardPage, QLineEdit, QLabel, QVBoxLayout, QMessageBox, QComboBox, QFormLayout, QGroupBox,
-    QDateEdit
+    QDateEdit, QTextEdit
 )
 from sqlalchemy.orm import Session
 from model import Barangay, Household, Resident, User 
@@ -17,17 +17,17 @@ class BarangayPage(QWizardPage):
         layout.addWidget(QLabel("Barangay Name:"))
         layout.addWidget(self.name_edit)
 
-        self.history_edit = QLineEdit()
+        self.history_edit = QTextEdit()
         self.history_edit.setPlaceholderText("History")
         layout.addWidget(QLabel("History:"))
         layout.addWidget(self.history_edit)
 
-        self.mission_edit = QLineEdit()
+        self.mission_edit = QTextEdit()
         self.mission_edit.setPlaceholderText("Mission")
         layout.addWidget(QLabel("Mission:"))
         layout.addWidget(self.mission_edit)
 
-        self.vision_edit = QLineEdit()
+        self.vision_edit = QTextEdit()
         self.vision_edit.setPlaceholderText("Vision")
         layout.addWidget(QLabel("Vision:"))
         layout.addWidget(self.vision_edit)
@@ -201,9 +201,9 @@ class InitWizard(QWizard):
     def accept(self):
         # Gather all the data from pages
         barangay_name = self.barangay_page.name_edit.text().strip().upper()
-        barangay_history = self.barangay_page.history_edit.text().strip().upper()
-        barangay_mission = self.barangay_page.mission_edit.text().strip().upper()
-        barangay_vision = self.barangay_page.vision_edit.text().strip().upper()
+        barangay_history = self.barangay_page.history_edit.toPlainText().strip().upper()
+        barangay_mission = self.barangay_page.mission_edit.toPlainText().strip().upper()
+        barangay_vision = self.barangay_page.vision_edit.toPlainText().strip().upper()
 
         household_name = self.household_page.tbHouseholdName.text().strip().upper()
         house_no = self.household_page.tbHouseNo.text().strip().upper()

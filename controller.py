@@ -1643,7 +1643,7 @@ class CertificateWindowController:
         # Update resident fields
         certificate.date_issued = updated_data['date_issued']
         certificate.type = updated_data['type']
-        certificate.purpose = updated_data['purpose']
+        certificate.purpose = updated_data['purpose'].upper()
         certificate.resident = resident
     
         try:
