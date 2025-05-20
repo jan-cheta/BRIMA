@@ -117,7 +117,7 @@ class ResidentPage(QWizardPage):
                 'ELEMENTARY GRADUATE',
                 'SOME HIGH SCHOOL',
                 'HIGH SCHOOL GRADUATE',
-                'SOME COLLEGE/VOCATIONAL',
+                'SOME COLLEGE',
                 'COLLEGE GRADUATE',
                 "SOME/COMPLETED MASTER'S DEGREE",
                 'MASTERS GRADUATE',

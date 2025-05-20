@@ -121,10 +121,19 @@ class AddHouseholdForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Add Household')
+
+        self.setMinimumSize(600, 400)
         
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Add Household')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px;
+        """)
         self.form = HouseholdForm()
         self.addbar = AddBar()
         
@@ -153,10 +162,19 @@ class UpdateHouseholdForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Update Household')
-        
+
+        self.setMinimumSize(600, 400)
+
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Update Household')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px;
+        """)
         self.form = HouseholdForm()
         self.updatebar = UpdateBar()
         
@@ -186,9 +204,18 @@ class BrowseHouseholdForm(QDialog):
         super().__init__()
         self.setWindowTitle('Browse Household')
         
+        self.setMinimumSize(600, 400)
+
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Household')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px;
+        """)
         self.form = HouseholdForm()
         
         self.form.tbHouseholdName.setReadOnly(True)
@@ -349,9 +376,17 @@ class AddResidentForm(QDialog):
         super().__init__()
         self.setWindowTitle('Add Resident')
         
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
-        
+    
         self.header = QLabel('Add Resident')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px;
+        """)
         self.form = ResidentForm()
         self.addbar = AddBar()
         
@@ -387,10 +422,17 @@ class UpdateResidentForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Update Resident')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Update Resident')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 10px;
+        """)
         self.form = ResidentForm()
         self.updatebar = UpdateBar()
         
@@ -454,7 +496,7 @@ class BrowseResidentForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Browse Resident')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Resident')
@@ -543,7 +585,7 @@ class AddUserForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Add User')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Add User')
@@ -571,7 +613,7 @@ class UpdateUserForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Update User')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Update User')
@@ -602,7 +644,7 @@ class BrowseUserForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Browse Users')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Users')
@@ -652,7 +694,7 @@ class AddBlotterForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Add Blotter')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Add Blotter')
@@ -699,7 +741,7 @@ class UpdateBlotterForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Update Blotter')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel("Update Blotter")
@@ -746,7 +788,7 @@ class BrowseBlotterForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Browse Blotter')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel("Browse Blotter")
@@ -814,7 +856,7 @@ class AddCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Add Certificate')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header =  QLabel('Add Certificate')
@@ -841,7 +883,7 @@ class UpdateCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Update Certificate')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header =  QLabel('Update Certificate')
@@ -878,7 +920,7 @@ class BrowseCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Browse Certificate')
-        
+        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Certificate')

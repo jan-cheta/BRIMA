@@ -9,7 +9,10 @@ import sys
 
 def main():
     app = QApplication([])
-    
+     # Load QSS
+    with open("styles.qss", "r") as file:
+        app.setStyleSheet(file.read())
+
     db = Database()
     session = db.get_session()
 

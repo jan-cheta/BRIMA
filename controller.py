@@ -90,7 +90,7 @@ class BrimaController:
 
     
     def set_titles(self):
-        self.view.lbUser.setText(f"HELLO {self.user.resident.first_name} {self.user.resident.last_name}.")
+        self.view.lbUser.setText(f"HELLO, {self.user.resident.first_name} {self.user.resident.last_name}!")
         barangay = self.session.query(Barangay).first()
         self.view.lbBrgy.setText(f"{barangay.name}")
     

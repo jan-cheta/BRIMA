@@ -9,3 +9,5 @@ __pycache__/
 .ropeproject/
 
 .vscode/
+
+venv/

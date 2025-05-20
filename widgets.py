@@ -44,7 +44,7 @@ class BaseWindow(QWidget):
         self.btRefresh.setObjectName("btRefresh")
         self.btRefresh.setIcon(QIcon(":/refresh"))
         self.btRefresh.setIconSize(icon_size)
-        
+
         top_bar_layout.addWidget(self.btAdd)
         top_bar_layout.addWidget(self.btEdit)
         top_bar_layout.addWidget(self.btDelete)

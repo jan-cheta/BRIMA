@@ -142,10 +142,13 @@ class BrimaView(QWidget):
     
     def icon_helper(self, button, path):
         icon_size = QSize(24, 24)
-        
+    
         button.setIcon(QIcon(path))
         button.setIconSize(icon_size)
-
+        button.setLayoutDirection(Qt.LeftToRight)
+        button.setStyleSheet("text-align: left; padding-left: 8px; padding-top: 6px; padding-bottom: 6px;")
+        button.setMinimumHeight(40)
+        button.setMinimumWidth(120)
 
 class LoginView(QWidget):
     def __init__(self):
