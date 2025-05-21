@@ -1,0 +1,218 @@
+QWidget {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #2b2b2b,
+        stop: 1 #1e1e1e
+    );
+    font-size: 14px;
+    font-family: "Segoe UI";
+    color: #f0f0f0;
+}
+
+#header {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #3a3f44,
+        stop: 1 #555c63
+    );
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#lbBrima {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 18px;
+    background: transparent;
+}
+
+#lbBrgy {
+    color: #dcdcdc;
+    font-weight: bold;
+    font-size: 20px;
+    background: transparent;
+}
+
+#lbUser {
+    color: #bbbbbb;
+    font-style: italic;
+    font-weight: normal;
+    background: transparent;
+}
+
+QPushButton {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #555,
+        stop: 1 #333
+    );
+    color: white;
+    padding: 6px 12px;
+    text-align: left;
+    qproperty-iconSize: 24px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+QPushButton:hover {
+    background-color: #444;
+}
+
+/* Search Field & Button */
+#tbSearchBar {
+    background: #2e2e2e;
+    color: #f0f0f0;
+}
+
+#btSearchBar {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #555,
+        stop: 1 #444
+    );
+    padding: 5px 15px;
+    border-radius: 5px;
+    color: white;
+}
+
+#table {
+    background: #2a2a2a;
+    border: 1px solid #555;
+    gridline-color: #444;
+    font-size: 13px;
+    color: #f0f0f0;
+}
+
+QHeaderView::section {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #3c3f41,
+        stop: 1 #4b4f51
+    );
+    color: white;
+    padding: 4px;
+    border: 1px solid #555;
+    font-weight: bold;
+}
+
+QScrollBar:vertical {
+    background: #1f1f1f;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical {
+    background: #555;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+/* Forms */
+#HouseholdForm {
+    background-color: #2a2a2a;
+    font-size: 14px;
+    padding: 10px;
+}
+
+QLineEdit, QComboBox, QTextEdit, QDateEdit {
+    background-color: #3c3c3c;
+    color: #ffffff;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+QLineEdit:hover, QLineEdit:focus,
+QComboBox:hover, QComboBox:focus {
+    border: 1px solid #888;
+}
+
+QGroupBox {
+    background-color: #2e2e2e;
+    border: 1px solid #555;
+    border-radius: 5px;
+    margin-top: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 10px;
+}
+
+QGroupBox:title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    background-color: transparent;
+}
+
+QLabel {
+    background-color: transparent;
+    color: #f0f0f0;
+}
+
+#lbAddHousehold {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ffffff;
+    padding: 15px 0;
+    border-bottom: 2px solid #444;
+}
+
+QLabel#lbBrimaLogin {
+    font-size: 48pt;
+    font-weight: bold;
+    qproperty-alignment: 'AlignCenter';
+    background-color: transparent;
+    color: white;
+}
+
+QLabel#lbFullBrimaLogin {
+    font-size: 12pt;
+    qproperty-alignment: 'AlignCenter';
+    background-color: transparent;
+    color: #cccccc;
+}
+
+QCalendarWidget {
+    background-color: #2e2e2e;
+    color: white;
+}
+
+QCalendarWidget QAbstractItemView {
+    background-color: #3a3a3a;
+    selection-background-color: #5050ff;
+}
+
+QWidget#top_bar,
+QWidget#searchbar,
+QWidget#formWidget,
+QWidget#passwordWidget,
+QWidget#loginButtonWidget {
+    background-color: transparent;
+}
+
+QPushButton#btLogin {
+    text-align: center;
+}
+
+/* QWizard-specific styling */
+QWizard QLineEdit,
+QWizard QComboBox {
+    padding: 6px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #3c3c3c;
+    color: white;
+}
+
+QWizard QLineEdit:focus,
+QWizard QComboBox:focus {
+    border: 1px solid #0078d7;
+    background-color: #2a2a3a;
+}
+
+QWizard QLabel {
+    font-weight: bold;
+    color: #f0f0f0;
+}
