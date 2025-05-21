@@ -131,9 +131,14 @@ class AddHouseholdForm(QDialog):
         self.header.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #2c3e50;
+            color: white;
             padding: 10px;
-        """)
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = HouseholdForm()
         self.addbar = AddBar()
         
@@ -172,9 +177,14 @@ class UpdateHouseholdForm(QDialog):
         self.header.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #2c3e50;
+            color: white;
             padding: 10px;
-        """)
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = HouseholdForm()
         self.updatebar = UpdateBar()
         
@@ -213,9 +223,14 @@ class BrowseHouseholdForm(QDialog):
         self.header.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #2c3e50;
+            color: white;
             padding: 10px;
-        """)
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = HouseholdForm()
         
         self.form.tbHouseholdName.setReadOnly(True)
@@ -376,7 +391,7 @@ class AddResidentForm(QDialog):
         super().__init__()
         self.setWindowTitle('Add Resident')
         
-        self.setMinimumSize(600, 400)
+        self.setMinimumSize(600, 600)
         main_layout = QVBoxLayout(self)
     
         self.header = QLabel('Add Resident')
@@ -384,9 +399,14 @@ class AddResidentForm(QDialog):
         self.header.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #2c3e50;
+            color: white;
             padding: 10px;
-        """)
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = ResidentForm()
         self.addbar = AddBar()
         
@@ -430,9 +450,14 @@ class UpdateResidentForm(QDialog):
         self.header.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #2c3e50;
+            color: white;
             padding: 10px;
-        """)
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = ResidentForm()
         self.updatebar = UpdateBar()
         
@@ -500,6 +525,18 @@ class BrowseResidentForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Resident')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = ResidentForm()
         
         self.form.tbFirstName.setReadOnly(True)
@@ -589,6 +626,18 @@ class AddUserForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Add User')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = UserForm()
         self.addbar = AddBar()
         
@@ -617,6 +666,18 @@ class UpdateUserForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Update User')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = UserForm()
         self.updatebar = UpdateBar()
         
@@ -648,6 +709,18 @@ class BrowseUserForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Users')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = UserForm()
         
         self.form.cbName.setDisabled(True)
@@ -698,6 +771,18 @@ class AddBlotterForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Add Blotter')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = BlotterForm()
         self.addbar = AddBar()
         
@@ -745,6 +830,18 @@ class UpdateBlotterForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel("Update Blotter")
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = BlotterForm()
         self.updatebar = UpdateBar()
         
@@ -792,6 +889,18 @@ class BrowseBlotterForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel("Browse Blotter")
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = BlotterForm()
         
         self.form.tbRecordDate.setReadOnly(True)
@@ -887,6 +996,18 @@ class UpdateCertificateForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header =  QLabel('Update Certificate')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = CertificateForm()
         self.updatebar = UpdateBar()
         
@@ -924,6 +1045,18 @@ class BrowseCertificateForm(QDialog):
         main_layout = QVBoxLayout(self)
         
         self.header = QLabel('Browse Certificate')
+        self.header.setAlignment(Qt.AlignCenter) 
+        self.header.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
         self.form = CertificateForm()
         
         self.form.cbName.setDisabled(True)

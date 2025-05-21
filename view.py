@@ -153,6 +153,7 @@ class BrimaView(QWidget):
 class LoginView(QWidget):
     def __init__(self):
         super().__init__()
+
         lbLogo = QLabel()
         pxLogo = QPixmap(":/login") 
         scaled_pxLogo = pxLogo.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation) #
@@ -160,15 +161,15 @@ class LoginView(QWidget):
         lbLogo.setAlignment(Qt.AlignCenter) 
             
         lbBRIMA = QLabel("BRIMA")
+        lbBRIMA.setObjectName("lbBrimaLogin")
         lbBRIMA.setAlignment(Qt.AlignCenter) 
-        lbBRIMA.setFont(QFont("Segoe UI", 48, QFont.Bold))  
         lbBrima = QLabel("Barangay Records and Information Management Application")
+        lbBrima.setObjectName("lbFullBrimaLogin")
         lbBrima.setAlignment(Qt.AlignCenter) 
-        lbBrima.setFont(QFont("Segoe UI", 12))
-
 
         form_widget = QWidget()
         layout = QFormLayout(form_widget) 
+        form_widget.setObjectName("formWidget")
         form_widget.setContentsMargins(10, 10, 10, 10) 
         layout.setSpacing(15) 
 
@@ -178,6 +179,7 @@ class LoginView(QWidget):
 
         password_widget = QWidget()
         password_layout = QHBoxLayout(password_widget) 
+        password_widget.setObjectName("passwordWidget")
         self.tbPassword = QLineEdit() 
         self.tbPassword.setEchoMode(QLineEdit.EchoMode.Password) 
         self.tbPassword.setFixedHeight(40)
@@ -194,8 +196,10 @@ class LoginView(QWidget):
         layout.addRow("Password: ", password_widget)
 
         login_button_widget = QWidget()
+        login_button_widget.setObjectName("loginButtonWidget")
         login_button_layout = QHBoxLayout(login_button_widget)
         self.btLogin = QPushButton("Login")
+        self.btLogin.setObjectName("btLogin")
         self.btLogin.setFixedSize(200, 45)
         self.btLogin.setFont(QFont("Segoe UI", 15, QFont.Bold))
         login_button_layout.addWidget(self.btLogin)

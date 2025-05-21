@@ -15,6 +15,13 @@ class BaseWindow(QWidget):
         main_layout = QVBoxLayout(self)
         
         self.title = QLabel(title)
+        self.title.setStyleSheet("""
+            QLabel {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2a61ad; /* a readable shade of blue */
+            }
+        """)
         
         main_layout.addWidget(self.title)
         
@@ -145,6 +152,13 @@ class AboutWindow(QWidget):
         
         # Add header to the scroll content
         self.header = QLabel("BRGY. SIBLOT")
+        self.header.setStyleSheet("""
+            QLabel {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2a61ad; /* a readable shade of blue */
+            }
+        """)
         self.header.setAlignment(Qt.AlignCenter)
         scroll_layout.addWidget(self.header)
         
@@ -342,6 +356,13 @@ class DashboardWindow(QWidget):
         scroll_layout = QVBoxLayout(scroll_content)
 
         self.title = QLabel('Dashboard')
+        self.title.setStyleSheet("""
+            QLabel {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2a61ad; /* a readable shade of blue */
+            }
+        """)
         scroll_layout.addWidget(self.title)
 
         self.plot_list = []
