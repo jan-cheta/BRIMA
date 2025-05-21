@@ -1,6 +1,7 @@
 from view import MainView
 from controller import MainController
 from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import QFile, QTextStream
 from resources_rc import *
 from wizard import InitWizard
@@ -10,6 +11,7 @@ import sys
 
 def main():
     app = QApplication([])
+    app.setWindowIcon(QIcon(':/login'))
      # Load QSS
     file = QFile(":/styles")
     if file.open(QFile.ReadOnly | QFile.Text):
