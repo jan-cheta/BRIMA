@@ -352,7 +352,7 @@ class ResidentForm(QWidget):
         self.tbOccupation = QLineEdit()
         self.cbCivilStatus = QComboBox()
         self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
-        self.tbCitizenship = QLineEdit()
+        self.tbCitizenship = QLineEdit('FILIPINO')
         self.cbSex = QComboBox()
         self.cbSex.addItems(['MALE', 'FEMALE', 'OTHER'])
         self.cbEducation = QComboBox()
