@@ -1,6 +1,7 @@
 from view import MainView
 from controller import MainController
 from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtCore import QFile, QTextStream
 from resources_rc import *
 from wizard import InitWizard
 from base import Database
@@ -10,8 +11,10 @@ import sys
 def main():
     app = QApplication([])
      # Load QSS
-    with open("styles.qss", "r") as file:
-        app.setStyleSheet(file.read())
+    file = QFile(":/styles")
+    if file.open(QFile.ReadOnly | QFile.Text):
+        stream = QTextStream(file)
+        app.setStyleSheet(stream.readAll())
 
     db = Database()
     session = db.get_session()

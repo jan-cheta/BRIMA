@@ -16,5 +16,6 @@
         <file alias="icnLogoutBlack">icons/icnLogoutBlack.png</file>
         <file alias="icnResidentsBlack">icons/icnResidentsBlack.png</file>
         <file alias="icnSettingsBlack">icons/icnSettingsBlack.png</file>
+        <file alias="styles">styles.qss</file>
     </qresource>
 </RCC>
