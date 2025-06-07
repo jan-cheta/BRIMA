@@ -3,10 +3,8 @@ from PySide6.QtWidgets import (QGridLayout, QTableWidget, QWidget, QVBoxLayout, 
 from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage
 from PySide6.QtCore import QSize, Qt, QRect
 
-import matplotlib
-matplotlib.use('QtAgg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+import pyqtgraph as pg
+from pyqtgraph import PlotWidget, BarGraphItem, TextItem
 
 class BaseWindow(QWidget):
     def __init__(self, title):
@@ -313,33 +311,40 @@ class DataPlotWidget(QWidget):
 
         self.setMinimumHeight(400)
         self.setMinimumWidth(400)
-        self.figure, self.ax = plt.subplots()
-        self.canvas = FigureCanvas(self.figure)
+
+        self.plot_widget = PlotWidget()
+        self.plot_widget.setBackground('w')
+        self.plot_widget.showGrid(x=True, y=True)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.canvas)
+        layout.addWidget(self.plot_widget)
 
-
+        self.bar_item = None
+        self.text_items = []
 
     def update_data(self, categories, values, title="Updated Plot"):
-        self.ax.clear()
+        # Clear previous bars and labels
+        self.plot_widget.clear()
+        self.text_items = []
 
-        bars = self.ax.bar(categories, values)
+        x = list(range(len(categories)))  # Numeric x positions
+        width = 0.6
 
-        for bar, value in zip(bars, values):
-            height = bar.get_height()
-            self.ax.text(
-                bar.get_x() + bar.get_width() / 2,  # Center of bar
-                height - (0.05 * height),           # Slightly below the top
-                f"{value}",                         # Label = count
-                ha="center", va="top",              # Align inside the bar
-                color="black"
-            )
+        # Create bar graph item
+        self.bar_item = BarGraphItem(x=x, height=values, width=width, brush='blue')
+        self.plot_widget.addItem(self.bar_item)
 
-        self.ax.set_title(title)
-        self.ax.set_ylabel("Count")
-        self.figure.tight_layout()
-        self.canvas.draw()
+        # Add value labels on bars
+        for i, value in enumerate(values):
+            text = TextItem(html=f"<div style='text-align: center;'>{value}</div>", anchor=(0.5, 1))
+            text.setPos(x[i], value)
+            self.plot_widget.addItem(text)
+            self.text_items.append(text)
+
+        # Set axis labels
+        self.plot_widget.setTitle(title, color='black', size='12pt')
+        self.plot_widget.setLabel('left', 'Count')
+        self.plot_widget.getAxis('bottom').setTicks([list(zip(x, categories))])
 
 class DashboardWindow(QWidget):
     def __init__(self):

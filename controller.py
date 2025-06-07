@@ -10,18 +10,14 @@ from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
 from sqlalchemy import or_, and_, desc, select, create_engine, func
-from sqlalchemy.orm import aliased, sessionmaker, declarative_base
+from sqlalchemy.orm import aliased, sessionmaker, declarative_base, Session             
 from docx import Document
-
 import os
 import shutil
 from datetime import datetime, date
-
-import matplotlib
-matplotlib.use('QtAgg') 
+import bcrypt
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+
 
 
 class MainController:
@@ -37,9 +33,16 @@ class MainController:
         self.view.stack.setCurrentIndex(0)
 
     def login(self):
-        data = self.view.login.get_fields()
-        user = self.session.query(User).filter(and_(User.username==data.get('username'), User.password==data.get('password'))).first()
+        """
+        Login page logic for applying permissions and switching to BrimaView
 
+        Returns:
+            None
+        """
+        
+        data = self.view.login.get_fields()
+        user = self.is_valid_login(self.session, data)
+        
         if user:
             QMessageBox.information(self.view, 'Success', 'Login Sucessful')
             self.view.login.tbUsername.clear()
@@ -53,7 +56,27 @@ class MainController:
             self.view.showMaximized()
         else:
             QMessageBox.critical(self.view, 'Invalid Credentials', 'Please input valid credentials')
-    
+
+    def is_valid_login(self, session: Session, data: dict) -> User:
+        """
+        
+        Login validation login that converts password to hash then checks the database for user
+
+        Args:
+            session (Session): The session to be used to query the database for users
+            data (dict): The data from the fields of the login page
+
+        Returns:
+            User: returns the user if query is valid 
+            
+        """        
+        user = session.query(User).filter(User.username==data.get('username')).first()
+
+        if user and bcrypt.checkpw(data.get('password').encode('utf-8'), user.password):
+            return user
+        else:
+            return None
+
     def logout(self):
         self.brima_control.user = None
         self.view.stack.setCurrentIndex(0)
@@ -100,32 +123,57 @@ class BrimaController:
         self.view.btAdmin.setVisible(is_admin)
 
         if not is_admin:
-            for win in (
-                self.view.household_window,
-                self.view.resident_window,
-                self.view.blotter_window,
-                self.view.certificate_window,
-                self.view.admin_window,
-            ):
-                for btn in (win.btAdd, win.btEdit, win.btDelete):
-                    btn.setVisible(False)
-            
-            for btn in (self.view.settings_window.edit_barangay, self.view.settings_window.backup):
-                btn.setEnabled(False)
+            self.setup_admin(self.view)
         else:
-            for win in (
-                self.view.household_window,
-                self.view.resident_window,
-                self.view.blotter_window,
-                self.view.certificate_window,
-                self.view.admin_window,
-            ):
-                for btn in (win.btAdd, win.btEdit, win.btDelete):
-                    btn.setVisible(True)
-            
-            for btn in (self.view.settings_window.edit_barangay, self.view.settings_window.backup):
-                btn.setEnabled(True)
+            self.setup_user(self.view)
 
+    def setup_admin(self, view: BrimaView) -> None:
+        """
+        
+        Sets up the all widgets to visible 
+
+        Args:
+            view (BrimaView): The main app UI
+
+        Returns:
+            None
+        """
+        for win in (
+            view.household_window,
+            view.resident_window,
+            view.blotter_window,
+            view.certificate_window,
+            view.admin_window,
+        ):
+            for btn in (win.btAdd, win.btEdit, win.btDelete):
+                btn.setVisible(False)
+
+        for btn in (view.settings_window.edit_barangay, view.settings_window.backup):
+            btn.setEnabled(False)
+
+    def setup_user(self, view: BrimaView) -> None:
+        """
+        
+        Sets admin level widgets to not visible
+
+        Args:
+            view (BrimaView): The main app UI
+
+        Returns:
+            None
+        """
+        for win in (
+            view.household_window,
+            view.resident_window,
+            view.blotter_window,
+            view.certificate_window,
+            view.admin_window,
+        ):
+            for btn in (win.btAdd, win.btEdit, win.btDelete):
+                btn.setVisible(True)
+    
+        for btn in (view.settings_window.edit_barangay, view.settings_window.backup):
+            btn.setEnabled(True)
 
 class HouseholdWindowController:
     def __init__(self, view: BaseWindow):
@@ -206,48 +254,73 @@ class HouseholdWindowController:
             add_form = AddHouseholdForm()
         
             # Button signals
-            add_form.addbar.btAdd.clicked.connect(lambda: self.on_add_button_click(add_form))
+            add_form.addbar.btAdd.clicked.connnect(lambda: self.on_add_button_click(add_form))
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
         
             # Execute the form as a modal dialog
             add_form.exec()
     
     def on_add_button_click(self, add_form):
-        # Get the data from the form
         data = add_form.get_fields()
+
+        validate = self.validate_addlidate_add(self.session, data)
+        
+        if not validate[0]:
+            QMessageBox.critical(add_form, "Error", validate[1])
+        
+        try:
+            # Add the new resident to the session and commit the transaction
+            self.session.add(self.newhousehold_make(data))
+            self.session.commit()
+            QMessageBox.information(add_form, "Success", "Household added successfully!")
+            self.refresh() 
+            add_form.accept()
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(add_form, "Error", f"Failed to add household: {str(e)}")
+
+    def validate_add(session: Session, data: dict) -> tuple[bool, str]:
+        """
     
-        household_name = data.get("household_name")  # Use get to avoid KeyError
-        
-        if not household_name:  
-            QMessageBox.critical(add_form, "Error", "Household name cannot be empty.")
-            return  # Exit if the household is not selected or invalid
+        Validation logic for adding household
 
-        exist_household = self.session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
+        Args:
+            session (Session): The session to be used to query the database.
+            data (dict): The data from the fields.
 
+        Returns:
+            tuple[bool,str]: boolean to show validity and error message if not valid
+        """ 
+        household_name = data.get("household_name")
+
+        # Check if household_name is null
+        if not household_name:
+             return False, "Household name cannot be empty."
+    
+        # Check if household already exists
+        exist_household = session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
         if exist_household:
-            QMessageBox.critical(add_form, "Error", "Household name already exists.")
-            return
-        
-        # Get the Household object from the database using the household ID
-        new_household = Household(
+             return False, "Household name already exists."
+        return True, ""
+
+    def newhousehold_make(data: dict) -> Household:
+        """
+    
+        Creates a new Household entity from a data dictionary
+
+        Args:
+            data (dict): Household data to be used for new entity
+
+        Returns:
+            Household: New Household entity
+        """
+        return Household(
             household_name = data.get("household_name", "").upper(),
             house_no = data.get("house_no", "").upper(),
             street = data.get("street", "").upper(),
             sitio = data.get("sitio", "").upper(),
             landmark = data.get("landmark", "").upper()
-        )
-    
-        try:
-            # Add the new resident to the session and commit the transaction
-            self.session.add(new_household)
-            self.session.commit()
-            QMessageBox.information(add_form, "Success", "Household added successfully!")
-            self.refresh() 
-
-            add_form.accept()
-        except Exception as e:
-            self.session.rollback()
-            QMessageBox.critical(add_form, "Error", f"Failed to add household: {str(e)}")
+         )
 
     
     def edit(self):
@@ -256,6 +329,7 @@ class HouseholdWindowController:
         except:
             QMessageBox.warning(self.view, 'Select Row', 'Please Select Household to Edit')
             return
+        
         if row_id:
             household = self.session.query(Household).get(row_id)
             
@@ -740,7 +814,6 @@ class ResidentWindowController:
             QMessageBox.warning(self.view, 'Select Row', 'Please Select Resident to Browse')
             return
         
-        print('hello')
         if row_id:
             resident = self.session.query(Resident).get(row_id)
             
@@ -952,7 +1025,10 @@ class UserWindowController:
         del data['name']
 
         del data['confirm_password']
-    
+
+        salt = bcrypt.gensalt()
+        data['password'] = bcrypt.hashpw(data.get('password').encode('utf-8'), salt)
+        
         # Uppercase all string values in data (excluding non-string types)
         data = {key: value.upper() if isinstance(value, str) and key != 'username' and key != 'password' else value for key, value in data.items()}
     
@@ -1079,7 +1155,7 @@ class UserWindowController:
     
         # Update resident fields
         user.username = updated_data['username']
-        user.password = updated_data['password']
+        user.password = bcrypt.hash(updated_data['password'])
         user.position = updated_data['position']
         user.resident = resident
     

@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
 from sqlalchemy.orm import Session
 from model import Barangay, Household, Resident, User 
 import sys
+import bcrypt
 
 class BarangayPage(QWizardPage):
     def __init__(self):
@@ -230,7 +231,8 @@ class InitWizard(QWizard):
 
         # User fields (username and password as is, position upper)
         username = self.user_page.tbUserName.text().strip()
-        password = self.user_page.tbPassword.text().strip()
+        salt = bcrypt.gensalt()
+        password = bcrypt.hashpw(self.user_page.tbPassword.text().strip().encode('utf-8'), salt)
         position = self.user_page.cbPosition.currentText().strip().upper()
 
         # Save to DB
