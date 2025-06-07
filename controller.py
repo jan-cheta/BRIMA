@@ -9,6 +9,8 @@ from view import  BrimaView, MainView, LoginView
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
+import pyqtgraph as pg
+from pyqtgraph import PlotWidget, BarGraphItem, TextItem
 from sqlalchemy import or_, and_, desc, select, create_engine, func
 from sqlalchemy.orm import aliased, sessionmaker, declarative_base, Session             
 from docx import Document
@@ -97,7 +99,7 @@ class BrimaController:
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
         self.about_control = AboutUsWindowController(self.view.about_window)
         self.settings_control = SettingsWindowController(self.view.settings_window)
-        self.dashboard_control = DashbboardWindowController(self.view.dashboard_window)
+        self.dashboard_control = DashboardWindowController(self.view.dashboard_window)
 
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
@@ -2204,14 +2206,28 @@ class SettingsWindowController:
             # Handle any errors
             QMessageBox.critical(None, "Error", f"Failed to switch databases: {str(e)}")
     
-class DashbboardWindowController:
+class DashboardWindowController:
     def __init__(self, view: DashboardWindow):
         self.view = view
         self.db = Database()
         self.session = self.db.get_session()
         self.load_data()
 
-    
+    def update_bar_plot(self, plot, categories, values, title="Chart"):
+        plot.clear()
+        x = list(range(len(categories)))
+        width = 0.6
+        bars = pg.BarGraphItem(x=x, height=values, width=width, brush='skyblue')
+        plot.addItem(bars)
+        plot.setTitle(title)
+        plot.getAxis('bottom').setTicks([list(zip(x, categories))])
+
+        # Add value labels on top of bars
+        for i, value in enumerate(values):
+            label = pg.TextItem(html=f"<div style='text-align:center'>{value}</div>", anchor=(0.5, 1))
+            label.setPos(x[i], value)
+            plot.addItem(label)
+
     def load_data(self):
         # Count of entities
         households = self.session.query(Household).all()
@@ -2219,30 +2235,24 @@ class DashbboardWindowController:
         blotters = self.session.query(Blotter).all()
         certificates = self.session.query(Certificate).all()
 
-        self.view.plot_list[0].update_data(
-            categories = ['Households', 'Residents', 'Blotters', 'Certificates'],
-            values = [len(households), len(residents), len(blotters), len(certificates)],
-            title = "Total Number of Entities Recorded"
+        self.update_bar_plot(
+            self.view.plot_items[0],
+            categories=['Households', 'Residents', 'Blotters', 'Certificates'],
+            values=[len(households), len(residents), len(blotters), len(certificates)],
+            title="Total Number of Entities Recorded"
         )
 
         # Sitio Count aggregate (Residents)
-        stmt_sitio = (
-            select(
-                Household.sitio
-            ).join(Resident.household)
-        )
+        stmt_sitio = select(Household.sitio).join(Resident.household)
         df = pd.read_sql(stmt_sitio, self.session.bind)
         sitio_counts = df["sitio"].value_counts().sort_index()
         categories = sitio_counts.index.tolist()
         values = sitio_counts.values.tolist()
 
-        self.view.plot_list[1].update_data(categories, values, title="Resident Sitio Distribution")
-        # Age
-        stmt_age = (
-            select(
-                Resident.date_of_birth
-            )
-        )
+        self.update_bar_plot(self.view.plot_items[1], categories, values, "Resident Sitio Distribution")
+
+        # Age groups
+        stmt_age = select(Resident.date_of_birth)
         df = pd.read_sql(stmt_age, self.session.bind)
         df["date_of_birth"] = pd.to_datetime(df["date_of_birth"])
         today = pd.Timestamp(datetime.today().date())
@@ -2256,47 +2266,36 @@ class DashbboardWindowController:
         categories = age_counts.index.tolist()
         values = age_counts.values.tolist()
 
-        self.view.plot_list[2].update_data(categories, values, title="Resident Age Group Distribution")
+        self.update_bar_plot(self.view.plot_items[2], categories, values, "Resident Age Group Distribution")
+
         # Sex
-        stmt_sex = (
-            select(
-                Resident.sex
-            )
-        )
+        stmt_sex = select(Resident.sex)
         df = pd.read_sql(stmt_sex, self.session.bind)
 
         sex_counts = df["sex"].value_counts().sort_index()
         categories = sex_counts.index.tolist()
         values = sex_counts.values.tolist()
 
-        self.view.plot_list[3].update_data(categories, values, title="Resident Gender/Sex Distribution")
-        
+        self.update_bar_plot(self.view.plot_items[3], categories, values, "Resident Gender/Sex Distribution")
+
         # Civil Status
-        stmt_education = (
-            select(
-                Resident.civil_status
-            )
-        )
-        df = pd.read_sql(stmt_education, self.session.bind)
+        stmt_civil = select(Resident.civil_status)
+        df = pd.read_sql(stmt_civil, self.session.bind)
 
         civil_counts = df["civil_status"].value_counts().sort_index()
         categories = civil_counts.index.tolist()
         values = civil_counts.values.tolist()
 
-        self.view.plot_list[4].update_data(categories, values, title="Resident Civil Status Distribution")
-        
-        # Blotter
-        stmt_status = (
-            select(
-                Blotter.status
-            )
-        )
+        self.update_bar_plot(self.view.plot_items[4], categories, values, "Resident Civil Status Distribution")
 
+        # Blotter Status
+        stmt_status = select(Blotter.status)
         df = pd.read_sql(stmt_status, self.session.bind)
 
         status_counts = df["status"].value_counts().sort_index()
         categories = status_counts.index.tolist()
         values = status_counts.values.tolist()
 
-        self.view.plot_list[5].update_data(categories, values, title="Blotter Status Distribution")
+        self.update_bar_plot(self.view.plot_items[5], categories, values, "Blotter Status Distribution")
+
 

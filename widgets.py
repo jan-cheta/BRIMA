@@ -349,44 +349,58 @@ class DataPlotWidget(QWidget):
 class DashboardWindow(QWidget):
     def __init__(self):
         super().__init__()
-        
-        main_layout = QVBoxLayout(self)
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-        scroll_content = QWidget()
-        scroll_layout = QVBoxLayout(scroll_content)
-
-        self.title = QLabel('Dashboard')
-        self.title.setStyleSheet("""
-            QLabel {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2a61ad; /* a readable shade of blue */
-            }
-        """)
-        scroll_layout.addWidget(self.title)
-
-        self.plot_list = []
-
-        for i in range(3):
-            plot_widget = QWidget()
-            plot_widg_layout = QHBoxLayout(plot_widget)
-            for j in range(2):  
-                plot = DataPlotWidget()
-                plot.setMinimumHeight(400)  
-                self.plot_list.append(plot)
-                plot_widg_layout.addWidget(plot)
-            scroll_layout.addWidget(plot_widget)
-
-        scroll_layout.addStretch()  
-        scroll_content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        scroll_area.setWidget(scroll_content)
-        main_layout.addWidget(scroll_area)
-
+        self.setWindowTitle("Brima Dashboard")
         self.setMinimumSize(800, 600)
 
+        main_layout = QVBoxLayout(self)
+
+        self.title = QLabel("Dashboard")
+        self.title.setAlignment(Qt.AlignCenter)
+        self.title.setStyleSheet("""
+            QLabel {
+                font-size: 20px;
+                font-weight: bold;
+                color: #2a61ad;
+            }
+        """)
+        main_layout.addWidget(self.title)
+
+        # This is the fast-rendering plot grid
+        self.plot_grid = pg.GraphicsLayoutWidget()
+        self.plot_grid.setBackground('w')
+        main_layout.addWidget(self.plot_grid)
+
+        self.plot_items = []  # Store plot references for updates
+
+        rows, cols = 3, 2  # 3 rows × 2 columns = 6 plots
+        for row in range(rows):
+            for col in range(cols):
+                plot = self.plot_grid.addPlot(row=row, col=col)
+                plot.showGrid(x=True, y=True)
+                plot.setLabel('left', 'Count')
+                plot.setTitle(f"Plot {row * cols + col + 1}")
+                self.plot_items.append(plot)
+
+        self.update_all_plots()
+
+    def update_all_plots(self):
+        for i, plot in enumerate(self.plot_items):
+            categories = ['A', 'B', 'C', 'D']
+            values = [i * 3 + 1, i * 3 + 2, i * 3 + 3, i * 3 + 4]
+            self.update_bar_plot(plot, categories, values, f"Chart {i + 1}")
+
+    def update_bar_plot(self, plot, categories, values, title="Chart"):
+        plot.clear()
+        x = list(range(len(categories)))
+        width = 0.6
+        bars = BarGraphItem(x=x, height=values, width=width, brush='skyblue')
+        plot.addItem(bars)
+        plot.setTitle(title)
+        plot.getAxis('bottom').setTicks([list(zip(x, categories))])
+
+        # Add value labels on top of bars
+        for i, value in enumerate(values):
+            label = TextItem(html=f"<div style='text-align:center'>{value}</div>", anchor=(0.5, 1))
+            label.setPos(x[i], value)
+            plot.addItem(label)
