@@ -35,13 +35,6 @@ class MainController:
         self.view.stack.setCurrentIndex(0)
 
     def login(self):
-        """
-        Login page logic for applying permissions and switching to BrimaView
-
-        Returns:
-            None
-        """
-        
         data = self.view.login.get_fields()
         user = self.is_valid_login(self.session, data)
         
@@ -60,18 +53,6 @@ class MainController:
             QMessageBox.critical(self.view, 'Invalid Credentials', 'Please input valid credentials')
 
     def is_valid_login(self, session: Session, data: dict) -> User:
-        """
-        
-        Login validation login that converts password to hash then checks the database for user
-
-        Args:
-            session (Session): The session to be used to query the database for users
-            data (dict): The data from the fields of the login page
-
-        Returns:
-            User: returns the user if query is valid 
-            
-        """        
         user = session.query(User).filter(User.username==data.get('username')).first()
 
         if user and bcrypt.checkpw(data.get('password').encode('utf-8'), user.password):
@@ -124,22 +105,12 @@ class BrimaController:
 
         self.view.btAdmin.setVisible(is_admin)
 
-        if not is_admin:
+        if is_admin:
             self.setup_admin(self.view)
         else:
             self.setup_user(self.view)
 
-    def setup_admin(self, view: BrimaView) -> None:
-        """
-        
-        Sets up the all widgets to visible 
-
-        Args:
-            view (BrimaView): The main app UI
-
-        Returns:
-            None
-        """
+    def setup_user(self, view: BrimaView) -> None:
         for win in (
             view.household_window,
             view.resident_window,
@@ -153,17 +124,7 @@ class BrimaController:
         for btn in (view.settings_window.edit_barangay, view.settings_window.backup):
             btn.setEnabled(False)
 
-    def setup_user(self, view: BrimaView) -> None:
-        """
-        
-        Sets admin level widgets to not visible
-
-        Args:
-            view (BrimaView): The main app UI
-
-        Returns:
-            None
-        """
+    def setup_admin(self, view: BrimaView) -> None:
         for win in (
             view.household_window,
             view.resident_window,
@@ -211,10 +172,8 @@ class HouseholdWindowController:
         search_text = self.view.get_search_text().lower()  
         search_terms = search_text.split() 
         
-        # Base query
         query = self.session.query(Household)
         
-        # Apply AND of ORs: each term must match one of the fields
         if search_terms:
             conditions = []
             for term in search_terms:
@@ -282,40 +241,17 @@ class HouseholdWindowController:
             QMessageBox.critical(add_form, "Error", f"Failed to add household: {str(e)}")
 
     def validate_add(session: Session, data: dict) -> tuple[bool, str]:
-        """
-    
-        Validation logic for adding household
-
-        Args:
-            session (Session): The session to be used to query the database.
-            data (dict): The data from the fields.
-
-        Returns:
-            tuple[bool,str]: boolean to show validity and error message if not valid
-        """ 
         household_name = data.get("household_name")
 
-        # Check if household_name is null
         if not household_name:
              return False, "Household name cannot be empty."
     
-        # Check if household already exists
-        exist_household = session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
-        if exist_household:
+        household_exist = session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
+        if household_exist:
              return False, "Household name already exists."
         return True, ""
 
     def newhousehold_make(data: dict) -> Household:
-        """
-    
-        Creates a new Household entity from a data dictionary
-
-        Args:
-            data (dict): Household data to be used for new entity
-
-        Returns:
-            Household: New Household entity
-        """
         return Household(
             household_name = data.get("household_name", "").upper(),
             house_no = data.get("house_no", "").upper(),
@@ -324,11 +260,10 @@ class HouseholdWindowController:
             landmark = data.get("landmark", "").upper()
          )
 
-    
     def edit(self):
         try:
             row_id = self.view.get_table_row()
-        except:
+        except Exception:
             QMessageBox.warning(self.view, 'Select Row', 'Please Select Household to Edit')
             return
         

@@ -49,12 +49,16 @@ class BaseWindow(QWidget):
         self.btRefresh.setObjectName("btRefresh")
         self.btRefresh.setIcon(QIcon(":/refresh"))
         self.btRefresh.setIconSize(icon_size)
+        self.btFilter = QPushButton("Filter")
+        self.btFilter.setObjectName("btFilter")
+        self.btFilter.setIcon(QIcon(":/filter_on"))
 
         top_bar_layout.addWidget(self.btAdd)
         top_bar_layout.addWidget(self.btEdit)
         top_bar_layout.addWidget(self.btDelete)
         top_bar_layout.addWidget(self.btBrowse)
         top_bar_layout.addWidget(self.btRefresh)
+        top_bar_layout.addWidget(self.btFilter)
         top_bar_layout.addStretch()
         
         main_layout.addWidget(top_bar)
