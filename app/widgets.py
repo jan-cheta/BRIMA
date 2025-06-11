@@ -52,6 +52,7 @@ class BaseWindow(QWidget):
         self.btFilter = QPushButton("Filter")
         self.btFilter.setObjectName("btFilter")
         self.btFilter.setIcon(QIcon(":/filter_on"))
+        self.btFilter.setIconSize(icon_size)
 
         top_bar_layout.addWidget(self.btAdd)
         top_bar_layout.addWidget(self.btEdit)

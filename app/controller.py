@@ -3,7 +3,7 @@ from model import Household, Resident, User, Blotter, Certificate, Barangay
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
     UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
-    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
+    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm, FilterHouseholdForm, FilterResidentForm
 )
 from view import  BrimaView, MainView, LoginView
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
@@ -138,12 +138,14 @@ class BrimaController:
         for btn in (view.settings_window.edit_barangay, view.settings_window.backup):
             btn.setEnabled(True)
 
-class HouseholdWindowController:
+class BaseController:
     def __init__(self, view: BaseWindow):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
+        self.filter = self.default_filter()
         self.refresh()
+        
         
         self.view.btRefresh.clicked.connect(self.refresh)
         self.view.btSearch.clicked.connect(self.search)
@@ -152,7 +154,37 @@ class HouseholdWindowController:
         self.view.btEdit.clicked.connect(self.edit)
         self.view.btDelete.clicked.connect(self.delete)
         self.view.btBrowse.clicked.connect(self.browse)
-        
+        self.view.btFilter.clicked.connect(self.apply_filter)
+
+    def default_filter(self):
+        pass
+
+    def refresh(self):
+        pass
+
+    def search(self):
+        pass
+
+    def add(self):
+        pass
+
+    def edit(self):
+        pass
+    
+    def delete(self):
+        pass
+
+    def browse(self):
+        pass
+
+    def apply_filter(self):
+        pass
+
+
+class HouseholdWindowController(BaseController):
+    def __init__(self, view: BaseWindow):
+        super().__init__(view)
+               
     def refresh(self):
         self.view.set_search_text('')
         households = self.session.query(Household).order_by(Household.household_name).all()
@@ -215,7 +247,7 @@ class HouseholdWindowController:
             add_form = AddHouseholdForm()
         
             # Button signals
-            add_form.addbar.btAdd.clicked.connnect(lambda: self.on_add_button_click(add_form))
+            add_form.addbar.btAdd.clicked.connect(lambda: self.on_add_button_click(add_form))
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
         
             # Execute the form as a modal dialog
@@ -390,20 +422,14 @@ class HouseholdWindowController:
                     self.session.commit()
                     self.refresh()
 
-class ResidentWindowController:
+    def apply_filter(self):
+        filter_form = FilterHouseholdForm()
+
+        filter_form.exec()
+         
+class ResidentWindowController(BaseController):
     def __init__(self, view: BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
-        self.refresh()
-        
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
+        super().__init__(view)
         
     def refresh(self):
         self.view.set_search_text('')
@@ -809,20 +835,14 @@ class ResidentWindowController:
                     self.session.commit()
                     self.refresh()
 
-class UserWindowController:
+    def apply_filter(self):
+        filter_form = FilterResidentForm()
+
+        filter_form.exec() 
+
+class UserWindowController(BaseController):
     def __init__(self, view: BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
-        self.refresh()
-        
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
+        super().__init__(view)
     
     def refresh(self):
         self.view.set_search_text('')

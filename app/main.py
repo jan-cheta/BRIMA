@@ -13,10 +13,10 @@ def main():
     app = QApplication([])
     app.setWindowIcon(QIcon(':/login'))
      # Load QSS
-    file = QFile(":/styles")
-    if file.open(QFile.ReadOnly | QFile.Text):
-        stream = QTextStream(file)
-        app.setStyleSheet(stream.readAll())
+    # file = QFile(":/styles")
+    # if file.open(QFile.ReadOnly | QFile.Text):
+    #     stream = QTextStream(file)
+    #     app.setStyleSheet(stream.readAll())
 
     db = Database()
     session = db.get_session()

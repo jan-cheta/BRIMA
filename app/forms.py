@@ -1,9 +1,28 @@
 from datetime import date
 from PySide6.QtWidgets import (QDialog, QGridLayout, QGroupBox, QTextEdit, QWidget, QHBoxLayout, QVBoxLayout,QFormLayout , QLineEdit,
-    QDateEdit, QComboBox, QPushButton, QMessageBox, QLabel, QCompleter, QTableWidget, QTableWidgetItem, QHeaderView,
+    QDateEdit, QComboBox, QPushButton, QMessageBox, QLabel, QCompleter, QTableWidget, QTableWidgetItem, QHeaderView, QSpinBox,
     QTextEdit)
 from PySide6.QtCore import Qt, QDate, QSize
 from PySide6.QtGui import QIcon, QPixmap, QFont
+
+class FormHeader(QLabel):
+    def __init__(self, title):
+        super().__init__()
+
+        self.setText(title)
+        
+        self.setAlignment(Qt.AlignCenter) 
+        self.setStyleSheet("""
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            background: qlineargradient(
+            x1: 0, y1: 0, x2: 1, y2: 0,
+            stop: 0 #3498db,
+            stop: 1 #2c3e50
+            );
+            """)
 
 class TableForm(QWidget):
     def __init__(self):
@@ -126,19 +145,8 @@ class AddHouseholdForm(QDialog):
         
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Add Household')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Add Household')
+
         self.form = HouseholdForm()
         self.addbar = AddBar()
         
@@ -172,19 +180,7 @@ class UpdateHouseholdForm(QDialog):
 
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Update Household')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Update Household')
         self.form = HouseholdForm()
         self.updatebar = UpdateBar()
         
@@ -217,20 +213,8 @@ class BrowseHouseholdForm(QDialog):
         self.setMinimumSize(600, 400)
 
         main_layout = QVBoxLayout(self)
-        
-        self.header = QLabel('Browse Household')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+
+        self.header = FormHeader('Browse Household')
         self.form = HouseholdForm()
         
         self.form.tbHouseholdName.setReadOnly(True)
@@ -274,7 +258,36 @@ class BrowseHouseholdForm(QDialog):
         self.form.tbStreet.setText(kargs['street'])
         self.form.cbSitio.setCurrentText(kargs['sitio'])
         self.form.tbLandmark.setText(kargs['landmark'])
-    
+
+class FilterHouseholdForm(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle('Filter Households')
+        self.setMinimumSize(600, 400)
+        main_layout = QVBoxLayout(self)
+
+        self.header = FormHeader('Filter Households')
+        self.form = QWidget()
+        form_layout = QFormLayout(self.form)
+        self.updatebar = UpdateBar()
+        self.cbSitio = QComboBox()
+        self.cbSitio.addItems(['','CASARATAN', 'CABAOANGAN', 'TRAMO'])
+
+        form_layout.addRow("Sitio", self.cbSitio)
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+
+    def set_fields(self, **kargs):
+        self.cbSitio.setCurrentText(kargs.get('sitio'))
+
+    def get_fields(self):
+        return {
+            'sitio': self.cbSitio.currentText()
+        }
+        
 class ResidentForm(QWidget):
     def __init__(self):
         super().__init__()
@@ -371,7 +384,7 @@ class ResidentForm(QWidget):
         )
         self.tbRemarks = QLineEdit()
         self.cbRole = QComboBox()
-        self.cbRole.addItems(['Head', 'Spouse', 'Child'])
+        self.cbRole.addItems(['HEAD', 'SPOUSE', 'CHILD'])
         other_layout.addRow('Occupation:', self.tbOccupation)
         other_layout.addRow('Civil Status:', self.cbCivilStatus)
         other_layout.addRow('Citizenship:', self.tbCitizenship)
@@ -394,19 +407,7 @@ class AddResidentForm(QDialog):
         self.setMinimumSize(600, 600)
         main_layout = QVBoxLayout(self)
     
-        self.header = QLabel('Add Resident')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Add Resident')
         self.form = ResidentForm()
         self.addbar = AddBar()
         
@@ -445,19 +446,7 @@ class UpdateResidentForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Update Resident')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Update Resident')
         self.form = ResidentForm()
         self.updatebar = UpdateBar()
         
@@ -524,19 +513,7 @@ class BrowseResidentForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Browse Resident')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Browse Resident')
         self.form = ResidentForm()
         
         self.form.tbFirstName.setReadOnly(True)
@@ -588,7 +565,82 @@ class BrowseResidentForm(QDialog):
         self.form.cbEducation.setCurrentText(kargs.get('education', ''))
         self.form.tbRemarks.setText(kargs.get('remarks', ''))
         self.form.cbRole.setCurrentText(kargs.get('role', ''))
+
+class FilterResidentForm(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle('Filter Residents')
+        self.setMinimumSize(600, 400)
+        main_layout = QVBoxLayout(self)
+
+        self.header = FormHeader('Filter Residents')
+        self.form = QWidget()
+        form_layout = QFormLayout(self.form)
+        self.updatebar = UpdateBar()
+
+        age_widget = QWidget()
+        age_widget_layout = QHBoxLayout(age_widget)
+        self.tbStartAge = QSpinBox()
+        self.tbEndAge = QSpinBox()
+        age_widget_layout.addWidget(self.tbStartAge)
+        age_widget_layout.addWidget(self.tbEndAge)
+        self.cbSitio = QComboBox()
+        self.cbSitio.addItems(['','CASARATAN', 'CABAOANGAN', 'TRAMO'])
+        self.cbCivilStatus = QComboBox()
+        self.cbCivilStatus.addItems(["", "SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
+        self.cbSex = QComboBox()
+        self.cbSex.addItems(['','MALE', 'FEMALE', 'OTHER'])
+        self.cbEducation = QComboBox()
+        self.cbEducation.addItems(
+            [
+                '',
+                'SOME ELEMENTARY',
+                'ELEMENTARY GRADUATE',
+                'SOME HIGH SCHOOL',
+                'HIGH SCHOOL GRADUATE',
+                'SOME COLLEGE/VOCATIONAL',
+                'COLLEGE GRADUATE',
+                "SOME/COMPLETED MASTER'S DEGREE",
+                'MASTERS GRADUATE',
+                'VOCATIONAL/TVET'
+            ]
+        )
+        self.cbRole = QComboBox()
+        self.cbRole.addItems(['','HEAD', 'SPOUSE', 'CHILD'])
+
+        form_layout.addRow("Age Range: ",age_widget)
+        form_layout.addRow("Sitio : ", self.cbSitio)
+        form_layout.addRow("Civil Status: ", self.cbCivilStatus)
+        form_layout.addRow("Sex: ", self.cbSex)
+        form_layout.addRow("Education: ", self.cbEducation)
+        form_layout.addRow("Role: ", self.cbRole)
         
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+
+    def set_fields(self, **kargs):
+        self.tbStartAge.setValue(kargs.get('start_age'))
+        self.tbEndAge.setValue(kargs.get('end_age'))
+        self.cbSitio.setCurrentText(kargs.get('sitio'))
+        self.cbCivilStatus.setCurrentText(kargs.get('civil_status'))
+        self.cbSex.setCurrentText(kargs.get('sex'))
+        self.cbEducation.setCurrentText(kargs.get('education'))
+        self.cbRole.setCurrentText(kargs.get('role'))
+
+    def get_fields(self):
+        return {
+            'start_age': self.tbStartAge.value(),
+            'end_age': self.tbEndAge.value(),
+            'sitio': self.cbSitio.currentText(),
+            'civil_status': self.cbCivilStatus.currentText(),
+            'sex': self.cbSex.currentText(),
+            'education': self.cbEducation.currentText(),
+            'role': self.cbRole.currentText()
+        }
+    
 class UserForm(QWidget):
     def __init__(self):
         super().__init__()
@@ -625,19 +677,7 @@ class AddUserForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Add User')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Add User')
         self.form = UserForm()
         self.addbar = AddBar()
         
@@ -665,19 +705,7 @@ class UpdateUserForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Update User')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Update User')
         self.form = UserForm()
         self.updatebar = UpdateBar()
         
@@ -708,19 +736,7 @@ class BrowseUserForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Browse Users')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Browse User')
         self.form = UserForm()
         
         self.form.cbName.setDisabled(True)
@@ -739,6 +755,35 @@ class BrowseUserForm(QDialog):
         self.form.tbPassword.setText(kargs.get('password', ''))
         self.form.cbPosition.setCurrentText(kargs.get('position', ''))
     
+class FilterUserForm(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle('Filter Users')
+        self.setMinimumSize(600, 400)
+        main_layout = QVBoxLayout(self)
+
+        self.header = FormHeader('Filter Users')
+        self.form = QWidget()
+        form_layout = QFormLayout(self.form)
+        self.updatebar = UpdateBar()
+        self.cbPosition = QComboBox()
+        self.cbPosition.addItems(['', 'CAPTAIN', 'SECRETARY', 'KAGAWAD', 'TANOD'])
+        form_layout.addRow('Position: ', self.cbPosition)
+                
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+
+    def set_fields(self, **kargs):
+        self.cbPosition.setCurrentText(kargs.get('position'))
+        
+    def get_fields(self):
+        return {
+            'position': self.cbPosition.currentText()
+        }
+
 class BlotterForm(QWidget):
     def __init__(self):
         super().__init__()
@@ -770,19 +815,7 @@ class AddBlotterForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Add Blotter')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Add Blotter')
         self.form = BlotterForm()
         self.addbar = AddBar()
         
@@ -829,19 +862,7 @@ class UpdateBlotterForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel("Update Blotter")
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Update Blotter')
         self.form = BlotterForm()
         self.updatebar = UpdateBar()
         
@@ -888,19 +909,7 @@ class BrowseBlotterForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel("Browse Blotter")
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Browse Blotter')
         self.form = BlotterForm()
         
         self.form.tbRecordDate.setReadOnly(True)
@@ -968,7 +977,7 @@ class AddCertificateForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header =  QLabel('Add Certificate')
+        self.header = FormHeader('Add Certificate')
         self.form = CertificateForm()
         self.addbar = AddBar()
         
@@ -995,19 +1004,7 @@ class UpdateCertificateForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header =  QLabel('Update Certificate')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Update Certificate')
         self.form = CertificateForm()
         self.updatebar = UpdateBar()
         
@@ -1044,19 +1041,7 @@ class BrowseCertificateForm(QDialog):
         self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
         
-        self.header = QLabel('Browse Certificate')
-        self.header.setAlignment(Qt.AlignCenter) 
-        self.header.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            padding: 10px;
-            background: qlineargradient(
-            x1: 0, y1: 0, x2: 1, y2: 0,
-            stop: 0 #3498db,
-            stop: 1 #2c3e50
-            );
-            """)
+        self.header = FormHeader('Browse Certificate')
         self.form = CertificateForm()
         
         self.form.cbName.setDisabled(True)
