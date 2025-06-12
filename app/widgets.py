@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QGridLayout, QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QLineEdit, QLabel, QTableWidgetItem, QHeaderView, QGroupBox, QTextEdit, QFormLayout, QScrollArea, QSizePolicy)
-from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage
+from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage, QColor, QBrush
 from PySide6.QtCore import QSize, Qt, QRect
 
 import pyqtgraph as pg
@@ -83,7 +83,7 @@ class BaseWindow(QWidget):
         self.table = QTableWidget()
         self.table.setObjectName('table')
         
-        self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setVisible(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         
@@ -313,48 +313,22 @@ class SettingsWindow(QWidget):
 class DataPlotWidget(QWidget):
     def __init__(self):
         super().__init__()
-
         self.setMinimumHeight(400)
         self.setMinimumWidth(400)
-
+        
         self.plot_widget = PlotWidget()
         self.plot_widget.setBackground('w')
         self.plot_widget.showGrid(x=True, y=True)
-
+        
         layout = QVBoxLayout(self)
         layout.addWidget(self.plot_widget)
-
+        
         self.bar_item = None
         self.text_items = []
-
-    def update_data(self, categories, values, title="Updated Plot"):
-        # Clear previous bars and labels
-        self.plot_widget.clear()
-        self.text_items = []
-
-        x = list(range(len(categories)))  # Numeric x positions
-        width = 0.6
-
-        # Create bar graph item
-        self.bar_item = BarGraphItem(x=x, height=values, width=width, brush='blue')
-        self.plot_widget.addItem(self.bar_item)
-
-        # Add value labels on bars
-        for i, value in enumerate(values):
-            text = TextItem(html=f"<div style='text-align: center;'>{value}</div>", anchor=(0.5, 1))
-            text.setPos(x[i], value)
-            self.plot_widget.addItem(text)
-            self.text_items.append(text)
-
-        # Set axis labels
-        self.plot_widget.setTitle(title, color='black', size='12pt')
-        self.plot_widget.setLabel('left', 'Count')
-        self.plot_widget.getAxis('bottom').setTicks([list(zip(x, categories))])
 
 class DashboardWindow(QWidget):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle("Brima Dashboard")
         self.setMinimumSize(800, 600)
 
@@ -371,7 +345,6 @@ class DashboardWindow(QWidget):
         """)
         main_layout.addWidget(self.title)
 
-        # This is the fast-rendering plot grid
         self.plot_grid = pg.GraphicsLayoutWidget()
         self.plot_grid.setBackground('w')
         main_layout.addWidget(self.plot_grid)
@@ -382,30 +355,29 @@ class DashboardWindow(QWidget):
         for row in range(rows):
             for col in range(cols):
                 plot = self.plot_grid.addPlot(row=row, col=col)
+                
+                # Disable mouse interaction
+                plot.setMouseEnabled(x=False, y=False)  # Disable panning
+                plot.hideButtons()  # Hide the auto-scale button
+                
+                # Disable zooming
+                for mouse_event in ['wheel', 'drag']:
+                    plot.setMouseEnabled(x=False, y=False)
+                
+                # Set axis styles
                 plot.showGrid(x=True, y=True)
                 plot.setLabel('left', 'Count')
                 plot.setTitle(f"Plot {row * cols + col + 1}")
+                
+                # Add padding to view box
+                plot.vb.setLimits(xMin=-0.5, 
+                                 xMax=3.5,  # Adjust based on number of bars
+                                 yMin=0, 
+                                 yMax=100)  # Adjust based on expected max value
+                
+                # Disable auto-range on mouse events
+                plot.vb.setMouseEnabled(x=False, y=False)
+                
                 self.plot_items.append(plot)
 
-        self.update_all_plots()
-
-    def update_all_plots(self):
-        for i, plot in enumerate(self.plot_items):
-            categories = ['A', 'B', 'C', 'D']
-            values = [i * 3 + 1, i * 3 + 2, i * 3 + 3, i * 3 + 4]
-            self.update_bar_plot(plot, categories, values, f"Chart {i + 1}")
-
-    def update_bar_plot(self, plot, categories, values, title="Chart"):
-        plot.clear()
-        x = list(range(len(categories)))
-        width = 0.6
-        bars = BarGraphItem(x=x, height=values, width=width, brush='skyblue')
-        plot.addItem(bars)
-        plot.setTitle(title)
-        plot.getAxis('bottom').setTicks([list(zip(x, categories))])
-
-        # Add value labels on top of bars
-        for i, value in enumerate(values):
-            label = TextItem(html=f"<div style='text-align:center'>{value}</div>", anchor=(0.5, 1))
-            label.setPos(x[i], value)
-            plot.addItem(label)
+    

@@ -264,7 +264,6 @@ class FilterHouseholdForm(QDialog):
         super().__init__()
 
         self.setWindowTitle('Filter Households')
-        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
 
         self.header = FormHeader('Filter Households')
@@ -760,7 +759,6 @@ class FilterUserForm(QDialog):
         super().__init__()
 
         self.setWindowTitle('Filter Users')
-        self.setMinimumSize(600, 400)
         main_layout = QVBoxLayout(self)
 
         self.header = FormHeader('Filter Users')
@@ -944,6 +942,52 @@ class BrowseBlotterForm(QDialog):
         self.form.tbRespondent.setText(kargs.get('respondent', ''))
         self.form.tbFullReport.setText(kargs.get('full_report', ''))
 
+class FilterBlotterForm(QDialog):
+    def __init__(self):
+        super().__init__()
+     
+        self.setWindowTitle('Filter Blotter')
+        main_layout = QVBoxLayout(self)
+
+        self.header = FormHeader('Filter Blotter')
+        self.form = QWidget()
+        form_layout = QFormLayout(self.form)
+        self.updatebar = UpdateBar()
+        self.cbStatus = QComboBox()
+        self.cbStatus.addItems(['', 'OPEN', 'ONGOING', 'CLOSED'])
+
+        rd_widget = QWidget()
+        rd_layout = QHBoxLayout()
+        rd_widget.setLayout(rd_layout)
+        
+        self.tbStartRecordDate = QDateEdit()
+        self.tbStartRecordDate.setCalendarPopup(True)
+        self.tbEndRecordDate = QDateEdit()
+        self.tbEndRecordDate.setCalendarPopup(True)
+
+        rd_layout.addWidget(self.tbStartRecordDate)
+        rd_layout.addWidget(self.tbEndRecordDate)
+
+        form_layout.addRow('Status: ', self.cbStatus)
+        form_layout.addRow('Record Date: ', rd_widget)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+
+    def set_fields(self, **kargs):
+        self.cbStatus.setCurrentText(kargs.get('status'))
+        self.tbStartRecordDate.setDate(kargs.get('start_date')) 
+        self.tbEndRecordDate.setDate(kargs.get('end_date')) 
+
+    def get_fields(self):
+        return {
+            'status': self.cbStatus.currentText(),
+            'start_date': self.tbStartRecordDate.date(),
+            'end_date': self.tbEndRecordDate.date()
+        }
+        
 class CertificateForm(QWidget):
     def __init__(self):
         super().__init__()
@@ -1069,5 +1113,49 @@ class BrowseCertificateForm(QDialog):
         self.form.cbType.setCurrentText(kargs.get('type', ''))
         self.form.tbPurpose.setText(kargs.get('purpose', ''))
 
+class FilterCertificateForm(QDialog):
+    def __init__(self):
+        super().__init__()
+     
+        self.setWindowTitle('Filter Users')
+        main_layout = QVBoxLayout(self)
 
+        self.header = FormHeader('Filter Blotter')
+        self.form = QWidget()
+        form_layout = QFormLayout(self.form)
+        self.updatebar = UpdateBar()
+        self.cbType = QComboBox()
+        self.cbType.addItems(['CLEARANCE', 'INDIGENCY', 'RESIDENCY'])
+
+        rd_widget = QWidget()
+        rd_layout = QHBoxLayout()
+        rd_widget.setLayout(rd_layout)
+        
+        self.tbStartRecordDate = QDateEdit()
+        self.tbStartRecordDate.setCalendarPopup(True)
+        self.tbEndRecordDate = QDateEdit()
+        self.tbEndRecordDate.setCalendarPopup(True)
+
+        rd_layout.addWidget(self.tbStartRecordDate)
+        rd_layout.addWidget(self.tbEndRecordDate)
+
+        form_layout.addRow('Status: ', self.cbType)
+        form_layout.addRow('Record Date: ', rd_widget)
+        
+        main_layout.addWidget(self.header)
+        main_layout.addWidget(self.form)
+        main_layout.addStretch()
+        main_layout.addWidget(self.updatebar)
+
+    def set_fields(self, **kargs):
+        self.cbType.setCurrentText(kargs.get('type'))
+        self.tbStartRecordDate.setDate(kargs.get('start_date')) 
+        self.tbEndRecordDate.setDate(kargs.get('end_date')) 
+
+    def get_fields(self):
+        return {
+            'type': self.cbType.currentText(),
+            'start_date': self.tbStartRecordDate.date(),
+            'end_date': self.tbEndRecordDate.date()
+        }
 

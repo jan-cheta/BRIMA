@@ -3,12 +3,14 @@ from model import Household, Resident, User, Blotter, Certificate, Barangay
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
     UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
-    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm, FilterHouseholdForm, FilterResidentForm
+    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm, FilterHouseholdForm, FilterResidentForm, FilterUserForm,
+    FilterBlotterForm, FilterCertificateForm
 )
 from view import  BrimaView, MainView, LoginView
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
+from PySide6.QtGui import QColor, QFont
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget, BarGraphItem, TextItem
 from sqlalchemy import or_, and_, desc, select, create_engine, func
@@ -1175,21 +1177,15 @@ class UserWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-class BlotterWindowController:
+    def apply_filter(self):
+        filter_form = FilterUserForm()
+
+        filter_form.exec()
+
+class BlotterWindowController(BaseController):
     def __init__(self, view : BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
-        self.refresh()
-        
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
-    
+        super().__init__(view)
+            
     def refresh(self):
         self.view.set_search_text('')
         blotters = self.session.query(Blotter).order_by(desc(Blotter.record_date)).all()
@@ -1414,20 +1410,14 @@ class BlotterWindowController:
                     self.session.commit()
                     self.refresh()
                     
-class CertificateWindowController:
-    def __init__(self, view: BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
-        self.refresh()
-        
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
+    def apply_filter(self):
+        filter_form = FilterBlotterForm()
+
+        filter_form.exec()
+
+class CertificateWindowController(BaseController):
+    def __init__(self, view : BaseWindow):
+        super().__init__(view)
     
     def refresh(self):
         self.view.set_search_text('')
@@ -1852,6 +1842,11 @@ class CertificateWindowController:
                     self.session.commit()
                     self.refresh()
 
+    def apply_filter(self):
+        filter_form = FilterCertificateForm()
+
+        filter_form.exec()
+
 class AboutUsWindowController:
     def __init__(self, view: AboutWindow):
         self.db = Database()
@@ -2160,7 +2155,17 @@ class SettingsWindowController:
         except Exception as e:
             # Handle any errors
             QMessageBox.critical(None, "Error", f"Failed to switch databases: {str(e)}")
-    
+
+
+COLOR_PALETTE = [
+    QColor(70, 130, 180),   # Steel blue
+    QColor(220, 60, 60),    # Red
+    QColor(60, 180, 60),    # Green
+    QColor(180, 60, 180),   # Purple
+    QColor(60, 180, 180),   # Cyan
+    QColor(180, 180, 60),   # Yellow
+]
+
 class DashboardWindowController:
     def __init__(self, view: DashboardWindow):
         self.view = view
@@ -2172,17 +2177,51 @@ class DashboardWindowController:
         plot.clear()
         x = list(range(len(categories)))
         width = 0.6
-        bars = pg.BarGraphItem(x=x, height=values, width=width, brush='skyblue')
-        plot.addItem(bars)
-        plot.setTitle(title)
-        plot.getAxis('bottom').setTicks([list(zip(x, categories))])
 
-        # Add value labels on top of bars
+        # Create bars with custom colors
+        color_index = self.view.plot_items.index(plot) % len(COLOR_PALETTE)
+        brush = pg.mkBrush(COLOR_PALETTE[color_index])
+    
+        bars = BarGraphItem(
+            x=x, 
+            height=values, 
+            width=width, 
+            brush=brush,
+            pen=pg.mkPen(QColor(0, 0, 0)))
+        plot.addItem(bars)
+
+        # Configure x-axis with bold black category labels
+        x_axis = plot.getAxis('bottom')
+        x_axis.setTicks([list(zip(x, categories))])
+    
+        # Create bold font for axis labels
+        axis_font = QFont('Arial', 10)
+        axis_font.setBold(True)
+        x_axis.setTickFont(axis_font)
+        x_axis.setTextPen(pg.mkPen(color='black', width=1))
+
+        # Set plot title with bold black font
+        title_font = QFont('Arial', 12)
+        title_font.setBold(True)
+        plot.setTitle(title, color='black', size='12pt')
+    
+        # Access the title label properly and set font
+        title_label = plot.titleLabel
+        title_label.item.setFont(title_font)
+
+        # Add padding and disable interaction
+        plot.setXRange(-0.5, len(categories)-0.5)
+        plot.enableAutoRange(axis='y')
+    
+        # Add bold black value labels
         for i, value in enumerate(values):
-            label = pg.TextItem(html=f"<div style='text-align:center'>{value}</div>", anchor=(0.5, 1))
+            label = TextItem(
+                html=f"<div style='font-weight: bold; color: black; font-size: 12pt'>{value}</div>",
+                anchor=(0.5, 1)
+            )
             label.setPos(x[i], value)
             plot.addItem(label)
-
+            
     def load_data(self):
         # Count of entities
         households = self.session.query(Household).all()
