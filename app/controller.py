@@ -145,7 +145,7 @@ class BaseController:
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
-        self.filter = self.default_filter()
+        self.current_filter = self.default_filter()
         self.refresh()
         
         
@@ -156,7 +156,7 @@ class BaseController:
         self.view.btEdit.clicked.connect(self.edit)
         self.view.btDelete.clicked.connect(self.delete)
         self.view.btBrowse.clicked.connect(self.browse)
-        self.view.btFilter.clicked.connect(self.apply_filter)
+        self.view.btFilter.clicked.connect(self.filter_settings)
 
     def default_filter(self):
         pass
@@ -179,17 +179,20 @@ class BaseController:
     def browse(self):
         pass
 
-    def apply_filter(self):
+    def filter_settings(self):
         pass
 
 
 class HouseholdWindowController(BaseController):
     def __init__(self, view: BaseWindow):
         super().__init__(view)
-               
+
+    def default_filter(self):
+        return self.session.query(Household).order_by(Household.household_name)
+        
     def refresh(self):
         self.view.set_search_text('')
-        households = self.session.query(Household).order_by(Household.household_name).all()
+        households = self.current_filter.all()
         data = []
         for household in households:
             result = [
@@ -424,10 +427,13 @@ class HouseholdWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-    def apply_filter(self):
+    def filter_settings(self):
         filter_form = FilterHouseholdForm()
 
         filter_form.exec()
+
+    def toggle_filter(self):
+        pass
          
 class ResidentWindowController(BaseController):
     def __init__(self, view: BaseWindow):
@@ -837,10 +843,13 @@ class ResidentWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-    def apply_filter(self):
+    def filter_settings(self):
         filter_form = FilterResidentForm()
 
-        filter_form.exec() 
+        filter_form.exec()
+
+    def toggle_filter(self):
+        pass 
 
 class UserWindowController(BaseController):
     def __init__(self, view: BaseWindow):
@@ -1177,10 +1186,13 @@ class UserWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-    def apply_filter(self):
+    def filter_settings(self):
         filter_form = FilterUserForm()
 
         filter_form.exec()
+
+    def toggle_filter(self):
+        pass
 
 class BlotterWindowController(BaseController):
     def __init__(self, view : BaseWindow):
@@ -1410,10 +1422,13 @@ class BlotterWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
                     
-    def apply_filter(self):
+    def filter_settings(self):
         filter_form = FilterBlotterForm()
 
         filter_form.exec()
+
+    def toggle_filter(self):
+        pass
 
 class CertificateWindowController(BaseController):
     def __init__(self, view : BaseWindow):
@@ -1842,10 +1857,13 @@ class CertificateWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-    def apply_filter(self):
+    def filter_settings(self):
         filter_form = FilterCertificateForm()
 
         filter_form.exec()
+
+    def toggle_filter(self):
+        pass
 
 class AboutUsWindowController:
     def __init__(self, view: AboutWindow):

@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage, QColor, QBrush
 from PySide6.QtCore import QSize, Qt, QRect
 
 import pyqtgraph as pg
-from pyqtgraph import PlotWidget, BarGraphItem, TextItem
+from pyqtgraph import PlotWidget
 
 class BaseWindow(QWidget):
     def __init__(self, title):
@@ -49,17 +49,14 @@ class BaseWindow(QWidget):
         self.btRefresh.setObjectName("btRefresh")
         self.btRefresh.setIcon(QIcon(":/refresh"))
         self.btRefresh.setIconSize(icon_size)
-        self.btFilter = QPushButton("Filter")
-        self.btFilter.setObjectName("btFilter")
-        self.btFilter.setIcon(QIcon(":/filter_on"))
-        self.btFilter.setIconSize(icon_size)
+        self.lbTotal = QLabel("Total: ")
 
         top_bar_layout.addWidget(self.btAdd)
         top_bar_layout.addWidget(self.btEdit)
         top_bar_layout.addWidget(self.btDelete)
         top_bar_layout.addWidget(self.btBrowse)
         top_bar_layout.addWidget(self.btRefresh)
-        top_bar_layout.addWidget(self.btFilter)
+        top_bar_layout.addWidget(self.lbTotal)
         top_bar_layout.addStretch()
         
         main_layout.addWidget(top_bar)
@@ -75,9 +72,22 @@ class BaseWindow(QWidget):
         self.btSearch.setObjectName('btSearch')
         self.btSearch.setIcon(QIcon(":/search"))
         
+        self.btToggleFilter = QPushButton("Filter: OFF")
+        self.btToggleFilter.setCheckable(True)
+        self.btToggleFilter.setChecked(False)
+        self.btToggleFilter.setIcon(QIcon(":/filter_on"))
+        self.btToggleFilter.setIconSize(icon_size)
+        self.btFilter = QPushButton()
+        self.btFilter.setObjectName("btFilter")
+        self.btFilter.setIconSize(icon_size)
+        self.btFilter.setIcon(QIcon(":/filter_settings"))
+        self.btFilter.setIconSize(icon_size)
+
         search_layout.addWidget(self.tbSearchBar)
         search_layout.addWidget(self.btSearch)
-        
+        search_layout.addWidget(self.btToggleFilter)
+        search_layout.addWidget(self.btFilter)
+
         main_layout.addWidget(search)
         
         self.table = QTableWidget()
