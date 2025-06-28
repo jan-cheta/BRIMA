@@ -63,9 +63,19 @@ class MainController:
             return None
 
     def logout(self):
-        self.brima_control.user = None
-        self.view.stack.setCurrentIndex(0)
-        self.view.showNormal()
+        
+        reply = QMessageBox.question(
+                            self.view,  # Parent widget
+                            "Confirm Logout?",
+                            f"Are you sure you want to logoout?",
+                            QMessageBox.Yes | QMessageBox.No,
+                            QMessageBox.No
+                        )
+
+        if reply == QMessageBox.Yes:
+            self.brima_control.user = None
+            self.view.stack.setCurrentIndex(0)
+            self.view.showNormal()
     
     
 class BrimaController:
@@ -148,7 +158,6 @@ class BaseController:
         self.current_filter = self.default_filter()
         self.refresh()
         
-        
         self.view.btRefresh.clicked.connect(self.refresh)
         self.view.btSearch.clicked.connect(self.search)
         self.view.tbSearchBar.returnPressed.connect(self.search)
@@ -182,6 +191,11 @@ class BaseController:
     def filter_settings(self):
         pass
 
+    def apply_filter(self):
+        pass
+
+    def clear_filter(self):
+        pass
 
 class HouseholdWindowController(BaseController):
     def __init__(self, view: BaseWindow):
@@ -209,7 +223,7 @@ class HouseholdWindowController(BaseController):
         search_text = self.view.get_search_text().lower()  
         search_terms = search_text.split() 
         
-        query = self.session.query(Household)
+        query = self.current_filter
         
         if search_terms:
             conditions = []
@@ -429,7 +443,10 @@ class HouseholdWindowController(BaseController):
 
     def filter_settings(self):
         filter_form = FilterHouseholdForm()
-
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.filter_clear(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
         filter_form.exec()
 
     def toggle_filter(self):

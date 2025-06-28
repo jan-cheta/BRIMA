@@ -101,7 +101,14 @@ class UpdateBar(QWidget):
         layout.addStretch()
         layout.addWidget(self.btRevert)
         layout.addWidget(self.btUpdate)
-    
+
+class FilterBar(UpdateBar):
+    def __init__(self):
+        super().__init__()
+
+        self.btRevert.setText('Clear Filter')
+        self.btUpdate.setText('Apply Filter')    
+
 class AddBar(QWidget):
     def __init__(self):
         super().__init__()
@@ -269,7 +276,7 @@ class FilterHouseholdForm(QDialog):
         self.header = FormHeader('Filter Households')
         self.form = QWidget()
         form_layout = QFormLayout(self.form)
-        self.updatebar = UpdateBar()
+        self.filterbar = FilterBar()
         self.cbSitio = QComboBox()
         self.cbSitio.addItems(['','CASARATAN', 'CABAOANGAN', 'TRAMO'])
 
@@ -277,7 +284,7 @@ class FilterHouseholdForm(QDialog):
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
         main_layout.addStretch()
-        main_layout.addWidget(self.updatebar)
+        main_layout.addWidget(self.filterbar)
 
     def set_fields(self, **kargs):
         self.cbSitio.setCurrentText(kargs.get('sitio'))
@@ -576,7 +583,7 @@ class FilterResidentForm(QDialog):
         self.header = FormHeader('Filter Residents')
         self.form = QWidget()
         form_layout = QFormLayout(self.form)
-        self.updatebar = UpdateBar()
+        self.filterbar = FilterBar()
 
         age_widget = QWidget()
         age_widget_layout = QHBoxLayout(age_widget)
@@ -618,7 +625,7 @@ class FilterResidentForm(QDialog):
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
         main_layout.addStretch()
-        main_layout.addWidget(self.updatebar)
+        main_layout.addWidget(self.filterbar)
 
     def set_fields(self, **kargs):
         self.tbStartAge.setValue(kargs.get('start_age'))
@@ -764,7 +771,7 @@ class FilterUserForm(QDialog):
         self.header = FormHeader('Filter Users')
         self.form = QWidget()
         form_layout = QFormLayout(self.form)
-        self.updatebar = UpdateBar()
+        self.filterbar = FilterBar()
         self.cbPosition = QComboBox()
         self.cbPosition.addItems(['', 'CAPTAIN', 'SECRETARY', 'KAGAWAD', 'TANOD'])
         form_layout.addRow('Position: ', self.cbPosition)
@@ -772,7 +779,7 @@ class FilterUserForm(QDialog):
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
         main_layout.addStretch()
-        main_layout.addWidget(self.updatebar)
+        main_layout.addWidget(self.filterbar)
 
     def set_fields(self, **kargs):
         self.cbPosition.setCurrentText(kargs.get('position'))
@@ -952,7 +959,7 @@ class FilterBlotterForm(QDialog):
         self.header = FormHeader('Filter Blotter')
         self.form = QWidget()
         form_layout = QFormLayout(self.form)
-        self.updatebar = UpdateBar()
+        self.filterbar = FilterBar()
         self.cbStatus = QComboBox()
         self.cbStatus.addItems(['', 'OPEN', 'ONGOING', 'CLOSED'])
 
@@ -974,7 +981,7 @@ class FilterBlotterForm(QDialog):
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
         main_layout.addStretch()
-        main_layout.addWidget(self.updatebar)
+        main_layout.addWidget(self.filterbar)
 
     def set_fields(self, **kargs):
         self.cbStatus.setCurrentText(kargs.get('status'))
@@ -1123,7 +1130,7 @@ class FilterCertificateForm(QDialog):
         self.header = FormHeader('Filter Blotter')
         self.form = QWidget()
         form_layout = QFormLayout(self.form)
-        self.updatebar = UpdateBar()
+        self.filterbar = FilterBar()
         self.cbType = QComboBox()
         self.cbType.addItems(['CLEARANCE', 'INDIGENCY', 'RESIDENCY'])
 
@@ -1145,7 +1152,7 @@ class FilterCertificateForm(QDialog):
         main_layout.addWidget(self.header)
         main_layout.addWidget(self.form)
         main_layout.addStretch()
-        main_layout.addWidget(self.updatebar)
+        main_layout.addWidget(self.filterbar)
 
     def set_fields(self, **kargs):
         self.cbType.setCurrentText(kargs.get('type'))

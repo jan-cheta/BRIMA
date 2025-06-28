@@ -72,23 +72,28 @@ class BaseWindow(QWidget):
         self.btSearch.setObjectName('btSearch')
         self.btSearch.setIcon(QIcon(":/search"))
         
-        self.btToggleFilter = QPushButton("Filter: OFF")
-        self.btToggleFilter.setCheckable(True)
-        self.btToggleFilter.setChecked(False)
-        self.btToggleFilter.setIcon(QIcon(":/filter_on"))
-        self.btToggleFilter.setIconSize(icon_size)
-        self.btFilter = QPushButton()
-        self.btFilter.setObjectName("btFilter")
-        self.btFilter.setIconSize(icon_size)
-        self.btFilter.setIcon(QIcon(":/filter_settings"))
-        self.btFilter.setIconSize(icon_size)
-
         search_layout.addWidget(self.tbSearchBar)
         search_layout.addWidget(self.btSearch)
-        search_layout.addWidget(self.btToggleFilter)
-        search_layout.addWidget(self.btFilter)
-
+       
         main_layout.addWidget(search)
+        
+        filter = QWidget()
+        filter.setObjectName('filterbar')
+        filter_layout = QHBoxLayout(filter)
+
+        self.btFilter = QPushButton("Filters")
+        self.btFilter.setCheckable(True)
+        self.btFilter.setChecked(False)
+        self.btFilter.setIcon(QIcon(":/filter_on"))
+        self.btFilter.setIconSize(icon_size)
+
+        self.lbFilter = QLabel(": ")
+
+        filter_layout.addWidget(self.btFilter)
+        filter_layout.addWidget(self.lbFilter)
+        filter_layout.addStretch()
+        
+        main_layout.addWidget(filter)
         
         self.table = QTableWidget()
         self.table.setObjectName('table')
