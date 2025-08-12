@@ -77,14 +77,25 @@ class MainController:
             self.view.stack.setCurrentIndex(0)
             self.view.showNormal()
     
-    
+
 class BrimaController:
-    def __init__(self, view : BrimaView, user):
+    # Add these as class constants at the top of the class
+    PAGE_HOUSEHOLD = 0
+    PAGE_RESIDENT = 1  
+    PAGE_ADMIN = 2
+    PAGE_BLOTTER = 3
+    PAGE_CERTIFICATE = 4
+    PAGE_ABOUT = 5
+    PAGE_SETTINGS = 6
+    PAGE_DASHBOARD = 7
+
+    def __init__(self, view: BrimaView, user):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
-        self.user = user 
+        self.user = user
 
+        # Initialize controllers
         self.household_control = HouseholdWindowController(self.view.household_window)
         self.resident_control = ResidentWindowController(self.view.resident_window)
         self.user_control = UserWindowController(self.view.admin_window)
@@ -94,17 +105,14 @@ class BrimaController:
         self.settings_control = SettingsWindowController(self.view.settings_window)
         self.dashboard_control = DashboardWindowController(self.view.dashboard_window)
 
-        self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
-        self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
-        self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
-        self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
-        self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
-        self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
-        self.view.btAboutUs.clicked.connect(self.about_control.load_data)
-        self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
-        self.view.btDashboard.clicked.connect(lambda: self.view.stack.setCurrentIndex(7))
-        self.view.btDashboard.clicked.connect(self.dashboard_control.load_data)
-        self.view.stack.setCurrentIndex(7)
+        # Connect buttons to navigation methods using descriptive page constants
+        self.view.btHousehold.clicked.connect(lambda: self.navigate_to_page(self.PAGE_HOUSEHOLD))
+        self.view.btResident.clicked.connect(lambda: self.navigate_to_page(self.PAGE_RESIDENT))
+        self.view.btAdmin.clicked.connect(lambda: self.navigate_to_page(self.PAGE_ADMIN))
+        self.view.btBlotter.clicked.connect(lambda: self.navigate_to_page(self.PAGE_BLOTTER))
+        self.view.btCertificate.clicked.connect(lambda: self.navigate_to_page(self.PAGE_CERTIFICATE))
+        self.view.btAboutUs.clicked.connect(self.show_about_page)
+        self.view.btSettings.clicked.connect(lambda: self.navigate_to_page(self.PAGE_SETTINGS))
 
     
     def set_titles(self):
