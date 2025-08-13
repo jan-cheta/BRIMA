@@ -275,10 +275,11 @@ class HouseholdWindowController(BaseController):
     def on_add_button_click(self, add_form):
         data = add_form.get_fields()
 
-        validate = self.validate_addlidate_add(self.session, data)
+        validate = self.validate_add(self.session, data)
         
         if not validate[0]:
             QMessageBox.critical(add_form, "Error", validate[1])
+            return
         
         try:
             # Add the new resident to the session and commit the transaction
@@ -291,7 +292,7 @@ class HouseholdWindowController(BaseController):
             self.session.rollback()
             QMessageBox.critical(add_form, "Error", f"Failed to add household: {str(e)}")
 
-    def validate_add(session: Session, data: dict) -> tuple[bool, str]:
+    def validate_add(self, session: Session, data: dict) -> tuple[bool, str]:
         household_name = data.get("household_name")
 
         if not household_name:
@@ -302,7 +303,7 @@ class HouseholdWindowController(BaseController):
              return False, "Household name already exists."
         return True, ""
 
-    def newhousehold_make(data: dict) -> Household:
+    def newhousehold_make(self, data: dict) -> Household:
         return Household(
             household_name = data.get("household_name", "").upper(),
             house_no = data.get("house_no", "").upper(),
@@ -2118,16 +2119,20 @@ class AboutUsWindowController:
 
             user_list.append({'name': full_name, 'position': position})
         
-        custom_order = ["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"]
+        custom_order = ["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD"]
 
         self.view.load_data(
             name = barangay.name,
-            history = barangay.history,
-            mission = barangay.mission,
-            vision = barangay.vision,
+            history = self.sentence_case(barangay.history),
+            mission = self.sentence_case(barangay.mission),
+            vision = self.sentence_case(barangay.vision),
             members = sorted(user_list, key=lambda user: custom_order.index(user['position'].upper()) if user['position'].upper() in custom_order else len(custom_order))
         )
-            
+
+    def sentence_case(self, text: str) -> str:
+        sentences = text.split(". ")
+        return ". ".join(s.strip().capitalize() for s in sentences)
+    
 class SettingsWindowController:
     def __init__(self, view: SettingsWindow):
         self.view = view
