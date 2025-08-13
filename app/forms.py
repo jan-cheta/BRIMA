@@ -370,7 +370,7 @@ class ResidentForm(QWidget):
         other_layout = QFormLayout()
         self.tbOccupation = QLineEdit()
         self.cbCivilStatus = QComboBox()
-        self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
+        self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "SEPARATED", "WIDOWED"])
         self.tbCitizenship = QLineEdit('FILIPINO')
         self.cbSex = QComboBox()
         self.cbSex.addItems(['MALE', 'FEMALE'])
@@ -594,22 +594,20 @@ class FilterResidentForm(QDialog):
         self.cbSitio = QComboBox()
         self.cbSitio.addItems(['ALL','CASARATAN', 'CABAOANGAN', 'TRAMO'])
         self.cbCivilStatus = QComboBox()
-        self.cbCivilStatus.addItems(["ALL", "SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
+        self.cbCivilStatus.addItems(["ALL", "SINGLE", "MARRIED", "SEPARATED", "WIDOWED"])
         self.cbSex = QComboBox()
         self.cbSex.addItems(['ALL','MALE', 'FEMALE'])
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
                 'ALL',
-                'SOME ELEMENTARY',
+                'ELEMENTARY LEVEL'
                 'ELEMENTARY GRADUATE',
-                'SOME HIGH SCHOOL',
                 'HIGH SCHOOL GRADUATE',
-                'SOME COLLEGE/VOCATIONAL',
-                'COLLEGE GRADUATE',
-                "SOME/COMPLETED MASTER'S DEGREE",
-                'MASTERS GRADUATE',
-                'VOCATIONAL/TVET'
+                'COLLEGE LEVEL',
+                'COLLEGE DEGREE',
+                'MASTERS DEGREE',
+                'VOCATIONAL/TESDA'
             ]
         )
         self.cbRole = QComboBox()

@@ -41,7 +41,7 @@ class MainController:
         user = self.is_valid_login(self.session, data)
         
         if user:
-            QMessageBox.information(self.view, 'Success', 'Login Sucessful')
+            QMessageBox.information(self.view, 'Success', 'Login Sucessful!')
             self.view.login.tbUsername.clear()
             self.view.login.tbPassword.clear()
             self.user = user
@@ -479,7 +479,7 @@ class ResidentWindowController(BaseController):
         super().__init__(view)
         
     def default_filter(self):
-        return self.session.query(Resident).order_by(Resident.last_name)
+        return self.session.query(Resident).join(Resident.household).order_by(Resident.last_name)
     
     def refresh(self):
         self.view.set_search_text('')
@@ -506,17 +506,20 @@ class ResidentWindowController(BaseController):
                 full_name,
                 resident.role,
                 household_name,
+                resident.remarks,
+                resident.date_of_birth,
+                resident.civil_status,
                 address
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Remarks', 'Birth Date', 'Civil Status', 'Address'], data)
 
     def search(self):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
 
-        query = self.current_filter.join(Resident.household)
+        query = self.current_filter
 
         if search_terms:
             conditions = []
@@ -689,11 +692,14 @@ class ResidentWindowController(BaseController):
                 update_form.form.cbHousehold.clear()
                 update_form.form.cbHousehold.addItems(household_names)
                 update_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
-                self.autofill_household(household_dict, update_form)
     
-                update_form.form.cbHousehold.currentTextChanged.connect(
-                    lambda: self.autofill_household(household_dict, update_form)
-                )
+                try:
+                    self.autofill_household(household_dict, update_form)
+                    update_form.form.cbHousehold.currentTextChanged.connect(
+                        lambda: self.autofill_household(household_dict, update_form)
+                    )
+                except:
+                    QMessageBox.warning(self.view, 'Missing Household', 'Please Update Household of this Resident')
     
                 # Set initial values
                 update_form.set_fields(
@@ -858,7 +864,10 @@ class ResidentWindowController(BaseController):
     
                 # Populate household combo box
                 browse_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
-                self.autofill_household(household_dict, browse_form)
+                try:
+                    self.autofill_household(household_dict, browse_form)
+                except:
+                    QMessageBox.warning(self.view, 'Missing Household', 'Please Update Household of this Resident')
                 
                 browse_form.exec()
         
@@ -1234,7 +1243,9 @@ class UserWindowController(BaseController):
     
         # Update resident fields
         user.username = updated_data['username']
-        user.password = bcrypt.hash(updated_data['password'])
+        salt = bcrypt.gensalt()
+        password_bytes = updated_data['password'].encode('utf-8')
+        user.password = bcrypt.hashpw(password_bytes, salt)
         user.position = updated_data['position']
         user.resident = resident
     
@@ -1559,7 +1570,15 @@ class BlotterWindowController(BaseController):
                     self.session.delete(blotter)
                     self.session.commit()
                     self.refresh()
-                    
+    
+    def filter_settings(self):
+        filter_form = FilterBlotterForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()                   
+
     def apply_filter(self, form: FilterBlotterForm):
         status = form.cbStatus.currentText()
         start_date = form.tbStartRecordDate.date().toPython()
@@ -2049,7 +2068,15 @@ class CertificateWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-    def apply_filter(self, form: FilterBlotterForm):
+    def filter_settings(self):
+        filter_form = FilterCertificateForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()
+
+    def apply_filter(self, form: FilterCertificateForm):
         type = form.cbType.currentText()
         start_date = form.tbStartRecordDate.date().toPython()
         end_date = form.tbEndRecordDate.date().toPython()
