@@ -311,9 +311,9 @@ class ResidentForm(QWidget):
         self.tbSuffix = QLineEdit()
         self.tbBirthDate = QDateEdit()
         self.tbBirthDate.setCalendarPopup(True)
-        personal_layout.addRow('First Name:', self.tbFirstName)
-        personal_layout.addRow('Last Name:', self.tbLastName)
+        personal_layout.addRow('First Name:', self.tbFirstName)        
         personal_layout.addRow('Middle Name:', self.tbMiddleName)
+        personal_layout.addRow('Last Name:', self.tbLastName)
         personal_layout.addRow('Suffix:', self.tbSuffix)
         personal_layout.addRow('Birth Date:', self.tbBirthDate)
         personal_group.setLayout(personal_layout)
@@ -377,15 +377,15 @@ class ResidentForm(QWidget):
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
-                'SOME ELEMENTARY',
+                'ALL',
+                'ELEMENTARY LEVEL',
                 'ELEMENTARY GRADUATE',
-                'SOME HIGH SCHOOL',
                 'HIGH SCHOOL GRADUATE',
-                'SOME COLLEGE/VOCATIONAL',
-                'COLLEGE GRADUATE',
-                "SOME/COMPLETED MASTER'S DEGREE",
-                'MASTERS GRADUATE',
-                'VOCATIONAL/TVET'
+                'COLLEGE LEVEL',
+                'COLLEGE DEGREE',
+                'MASTERS DEGREE',
+                'DOCTORATE DEGREE',
+                'VOCATIONAL/TESDA'
             ]
         )
         self.tbRemarks = QLineEdit()
@@ -601,12 +601,13 @@ class FilterResidentForm(QDialog):
         self.cbEducation.addItems(
             [
                 'ALL',
-                'ELEMENTARY LEVEL'
+                'ELEMENTARY LEVEL',
                 'ELEMENTARY GRADUATE',
                 'HIGH SCHOOL GRADUATE',
                 'COLLEGE LEVEL',
                 'COLLEGE DEGREE',
                 'MASTERS DEGREE',
+                'DOCTORATE DEGREE',
                 'VOCATIONAL/TESDA'
             ]
         )
@@ -967,8 +968,10 @@ class FilterBlotterForm(QDialog):
         
         self.tbStartRecordDate = QDateEdit()
         self.tbStartRecordDate.setCalendarPopup(True)
+        self.tbStartRecordDate.setDate(QDate.currentDate())
         self.tbEndRecordDate = QDateEdit()
         self.tbEndRecordDate.setCalendarPopup(True)
+        self.tbEndRecordDate.setDate(QDate.currentDate())
 
         rd_layout.addWidget(self.tbStartRecordDate)
         rd_layout.addWidget(self.tbEndRecordDate)
@@ -1138,8 +1141,11 @@ class FilterCertificateForm(QDialog):
         
         self.tbStartRecordDate = QDateEdit()
         self.tbStartRecordDate.setCalendarPopup(True)
+        self.tbStartRecordDate.setDate(QDate.currentDate())
         self.tbEndRecordDate = QDateEdit()
         self.tbEndRecordDate.setCalendarPopup(True)
+        self.tbEndRecordDate.setDate(QDate.currentDate())
+
 
         rd_layout.addWidget(self.tbStartRecordDate)
         rd_layout.addWidget(self.tbEndRecordDate)

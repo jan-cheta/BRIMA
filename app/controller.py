@@ -31,7 +31,7 @@ class MainController:
         self.view = view
         self.user = None
         self.brima = self.view.brima
-        self.brima_control = BrimaController(self.brima, None)
+        self.brima_control = BrimaController(self.brima, None, self)
         self.view.login.btLogin.clicked.connect(self.login)
         self.brima.btLogout.clicked.connect(self.logout)
         self.view.stack.setCurrentIndex(0)
@@ -77,9 +77,14 @@ class MainController:
             self.view.stack.setCurrentIndex(0)
             self.view.showNormal()
     
+    def force_logout(self):
+        self.brima_control.user = None
+        self.view.stack.setCurrentIndex(0)
+        self.view.showNormal()
+    
     
 class BrimaController:
-    def __init__(self, view : BrimaView, user):
+    def __init__(self, view : BrimaView, user, parent: MainController):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
@@ -91,21 +96,25 @@ class BrimaController:
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
         self.about_control = AboutUsWindowController(self.view.about_window)
-        self.settings_control = SettingsWindowController(self.view.settings_window)
+        self.settings_control = SettingsWindowController(self.view.settings_window, parent)
         self.dashboard_control = DashboardWindowController(self.view.dashboard_window)
 
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
+        self.view.btHousehold.clicked.connect(self.household_control.refresh)
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
+        self.view.btResident.clicked.connect(self.resident_control.refresh)
         self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
+        self.view.btAdmin.clicked.connect(self.user_control.refresh)
         self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
+        self.view.btBlotter.clicked.connect(self.blotter_control.refresh)
         self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
+        self.view.btCertificate.clicked.connect(self.certificate_control.refresh)
         self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
         self.view.btAboutUs.clicked.connect(self.about_control.load_data)
         self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
         self.view.btDashboard.clicked.connect(lambda: self.view.stack.setCurrentIndex(7))
         self.view.btDashboard.clicked.connect(self.dashboard_control.load_data)
         self.view.stack.setCurrentIndex(7)
-
     
     def set_titles(self):
         self.view.lbUser.setText(f"HELLO, {self.user.resident.first_name} {self.user.resident.last_name}!")
@@ -216,7 +225,7 @@ class HouseholdWindowController(BaseController):
                 f"{household.house_no} {household.street} {household.sitio} {household.landmark}"
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
         self.view.load_table(['id', 'Date Added', 'Household Name', 'Address'], data)
     
     def search(self):
@@ -479,7 +488,7 @@ class ResidentWindowController(BaseController):
         super().__init__(view)
         
     def default_filter(self):
-        return self.session.query(Resident).join(Resident.household).order_by(Resident.last_name)
+        return self.session.query(Resident).outerjoin(Resident.household).order_by(Resident.last_name)
     
     def refresh(self):
         self.view.set_search_text('')
@@ -503,17 +512,18 @@ class ResidentWindowController(BaseController):
             result = [
                 resident.id,
                 resident.date_added,
-                full_name,
                 resident.role,
+                full_name,
+                resident.sex,
                 household_name,
-                resident.remarks,
                 resident.date_of_birth,
                 resident.civil_status,
+                resident.remarks,
                 address
             ]
             data.append(result)
-        
-        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Remarks', 'Birth Date', 'Civil Status', 'Address'], data)
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
+        self.view.load_table(['id', 'Date Added','Role', 'Full Name', 'Sex', 'Household Name', 'Birth Date', 'Civil Status', 'Remarks', 'Address'], data)
 
     def search(self):
         search_text = self.view.get_search_text().lower()
@@ -565,14 +575,18 @@ class ResidentWindowController(BaseController):
             result = [
                 resident.id,
                 resident.date_added,
-                full_name,
                 resident.role,
+                full_name,
+                resident.sex,
                 household_name,
+                resident.date_of_birth,
+                resident.civil_status,
+                resident.remarks,
                 address
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+        self.view.load_table(['id', 'Date Added','Role', 'Full Name', 'Sex', 'Household Name', 'Birth Date', 'Civil Status', 'Remarks', 'Address'], data)
     
     def add(self):
         add_form = AddResidentForm()
@@ -973,8 +987,10 @@ class ResidentWindowController(BaseController):
 class UserWindowController(BaseController):
     def __init__(self, view: BaseWindow):
         super().__init__(view)
+
     def default_filter(self):
-        return self.session.query(User).join(User.resident).order_by(User.id, User.date_added)
+        return self.session.query(User).outerjoin(User.resident).order_by(User.id, User.date_added)
+    
     def refresh(self):
         self.view.set_search_text('')
         users = self.current_filter.all()
@@ -1000,7 +1016,7 @@ class UserWindowController(BaseController):
                 full_name
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
         self.view.load_table(['id', 'Date Added', 'Username', 'Position', 'Full Name'], data)
 
     def search(self):
@@ -1361,7 +1377,7 @@ class BlotterWindowController(BaseController):
                 str(blotter.full_report)[:20]
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}")      
         self.view.load_table(['id', 'Record Date', 'Complainant', 'Respondent', 'Status','Report'], data)
     
     def search(self):
@@ -1624,7 +1640,7 @@ class CertificateWindowController(BaseController):
         super().__init__(view)
     
     def default_filter(self):
-        return self.session.query(Certificate).join(Certificate.resident).order_by(desc(Certificate.date_issued))
+        return self.session.query(Certificate).outerjoin(Certificate.resident).order_by(desc(Certificate.date_issued))
     
     def refresh(self):
         self.view.set_search_text('')
@@ -1652,7 +1668,7 @@ class CertificateWindowController(BaseController):
                 purpose
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
         self.view.load_table(['id', 'Date Issued', 'Type', 'Resident', 'Purpose'], data)
         
     def search(self):
@@ -2161,8 +2177,9 @@ class AboutUsWindowController:
         return ". ".join(s.strip().capitalize() for s in sentences)
     
 class SettingsWindowController:
-    def __init__(self, view: SettingsWindow):
+    def __init__(self, view: SettingsWindow, parent: MainController):
         self.view = view
+        self.parent = parent
         self.db = Database()
         self.session = self.db.get_session()
         self.load_data()
@@ -2423,7 +2440,8 @@ class SettingsWindowController:
             db_instance.Session = sessionmaker(bind=db_instance.engine)  # Rebind the session to the new engine
 
             # Notify the user
-            QMessageBox.information(None, "Database Switched", "The database has been replaced successfully.")
+            QMessageBox.information(None, "Database Switched", "The database has been replaced successfully. Please Login Again.")
+            self.parent.force_logout()
 
         except Exception as e:
             # Handle any errors
