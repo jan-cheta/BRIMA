@@ -278,7 +278,7 @@ class FilterHouseholdForm(QDialog):
         form_layout = QFormLayout(self.form)
         self.filterbar = FilterBar()
         self.cbSitio = QComboBox()
-        self.cbSitio.addItems(['','CASARATAN', 'CABAOANGAN', 'TRAMO'])
+        self.cbSitio.addItems(['ALL','CASARATAN', 'CABAOANGAN', 'TRAMO'])
 
         form_layout.addRow("Sitio", self.cbSitio)
         main_layout.addWidget(self.header)
@@ -592,15 +592,15 @@ class FilterResidentForm(QDialog):
         age_widget_layout.addWidget(self.tbStartAge)
         age_widget_layout.addWidget(self.tbEndAge)
         self.cbSitio = QComboBox()
-        self.cbSitio.addItems(['','CASARATAN', 'CABAOANGAN', 'TRAMO'])
+        self.cbSitio.addItems(['ALL','CASARATAN', 'CABAOANGAN', 'TRAMO'])
         self.cbCivilStatus = QComboBox()
-        self.cbCivilStatus.addItems(["", "SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
+        self.cbCivilStatus.addItems(["ALL", "SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
         self.cbSex = QComboBox()
-        self.cbSex.addItems(['','MALE', 'FEMALE', 'OTHER'])
+        self.cbSex.addItems(['ALL','MALE', 'FEMALE', 'OTHER'])
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
-                '',
+                'ALL',
                 'SOME ELEMENTARY',
                 'ELEMENTARY GRADUATE',
                 'SOME HIGH SCHOOL',
@@ -613,7 +613,7 @@ class FilterResidentForm(QDialog):
             ]
         )
         self.cbRole = QComboBox()
-        self.cbRole.addItems(['','HEAD', 'SPOUSE', 'CHILD'])
+        self.cbRole.addItems(['ALL','HEAD', 'SPOUSE', 'CHILD'])
 
         form_layout.addRow("Age Range: ",age_widget)
         form_layout.addRow("Sitio : ", self.cbSitio)
@@ -773,7 +773,7 @@ class FilterUserForm(QDialog):
         form_layout = QFormLayout(self.form)
         self.filterbar = FilterBar()
         self.cbPosition = QComboBox()
-        self.cbPosition.addItems(['', 'CAPTAIN', 'SECRETARY', 'KAGAWAD', 'TANOD'])
+        self.cbPosition.addItems(['ALL', 'CAPTAIN', 'SECRETARY', 'KAGAWAD', 'TANOD'])
         form_layout.addRow('Position: ', self.cbPosition)
                 
         main_layout.addWidget(self.header)
@@ -961,7 +961,7 @@ class FilterBlotterForm(QDialog):
         form_layout = QFormLayout(self.form)
         self.filterbar = FilterBar()
         self.cbStatus = QComboBox()
-        self.cbStatus.addItems(['', 'OPEN', 'ONGOING', 'CLOSED'])
+        self.cbStatus.addItems(['ALL', 'OPEN', 'ONGOING', 'CLOSED'])
 
         rd_widget = QWidget()
         rd_layout = QHBoxLayout()
@@ -1124,15 +1124,15 @@ class FilterCertificateForm(QDialog):
     def __init__(self):
         super().__init__()
      
-        self.setWindowTitle('Filter Users')
+        self.setWindowTitle('Filter Certificates')
         main_layout = QVBoxLayout(self)
 
-        self.header = FormHeader('Filter Blotter')
+        self.header = FormHeader('Filter Certificates')
         self.form = QWidget()
         form_layout = QFormLayout(self.form)
         self.filterbar = FilterBar()
         self.cbType = QComboBox()
-        self.cbType.addItems(['CLEARANCE', 'INDIGENCY', 'RESIDENCY'])
+        self.cbType.addItems(['ALL' ,'CLEARANCE', 'INDIGENCY', 'RESIDENCY'])
 
         rd_widget = QWidget()
         rd_layout = QHBoxLayout()
@@ -1146,7 +1146,7 @@ class FilterCertificateForm(QDialog):
         rd_layout.addWidget(self.tbStartRecordDate)
         rd_layout.addWidget(self.tbEndRecordDate)
 
-        form_layout.addRow('Status: ', self.cbType)
+        form_layout.addRow('Type: ', self.cbType)
         form_layout.addRow('Record Date: ', rd_widget)
         
         main_layout.addWidget(self.header)

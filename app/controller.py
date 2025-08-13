@@ -444,21 +444,45 @@ class HouseholdWindowController(BaseController):
     def filter_settings(self):
         filter_form = FilterHouseholdForm()
         filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
-        filter_form.filterbar.btRevert.clicked.connect(lambda: self.filter_clear(filter_form))
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
         filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
                
         filter_form.exec()
 
-    def toggle_filter(self):
-        pass
+    def apply_filter(self, form: FilterHouseholdForm):
+        sitio = form.cbSitio.currentText()
+        query = self.default_filter()
+
+        filters = []
+        
+        if sitio and sitio != "ALL":           
+            query = query.filter(Household.sitio == sitio)
+            filters.append(f"Sitio: {sitio}")
+            
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+                
+        self.current_filter = query.order_by(Household.household_name)
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterHouseholdForm):
+        form.cbSitio.setCurrentIndex(0)
+        self.apply_filter(form)
          
 class ResidentWindowController(BaseController):
     def __init__(self, view: BaseWindow):
         super().__init__(view)
         
+    def default_filter(self):
+        return self.session.query(Resident).order_by(Resident.last_name)
+    
     def refresh(self):
         self.view.set_search_text('')
-        residents = self.session.query(Resident).order_by(Resident.last_name).all()
+        residents = self.current_filter.all()
         data = []
         for resident in residents:
             full_name = " ".join(filter(None, [resident.first_name, resident.middle_name, resident.suffix]))
@@ -491,7 +515,7 @@ class ResidentWindowController(BaseController):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
 
-        query = self.session.query(Resident).join(Resident.household)
+        query = self.current_filter.join(Resident.household)
 
         if search_terms:
             conditions = []
@@ -862,19 +886,88 @@ class ResidentWindowController(BaseController):
 
     def filter_settings(self):
         filter_form = FilterResidentForm()
-
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
         filter_form.exec()
 
-    def toggle_filter(self):
-        pass 
+    def apply_filter(self, form: FilterResidentForm):
+        # Get filter values
+        start_age = form.tbStartAge.value()
+        end_age = form.tbEndAge.value() 
+        sitio = form.cbSitio.currentText()
+        civil_status = form.cbCivilStatus.currentText()
+        sex = form.cbSex.currentText()
+        education = form.cbEducation.currentText()
+        role = form.cbRole.currentText()
+
+        query = self.default_filter()
+        filters = []
+
+        # Apply age filter
+        if start_age > 0 or end_age > 0:
+            today = date.today()
+            if start_age > 0:
+                max_birth_date = date(today.year - start_age, today.month, today.day)
+                query = query.filter(Resident.date_of_birth <= max_birth_date)
+                filters.append(f"Min Age: {start_age}")
+            if end_age > 0:
+                min_birth_date = date(today.year - end_age, today.month, today.day)
+                query = query.filter(Resident.date_of_birth >= min_birth_date)
+                filters.append(f"Max Age: {end_age}")
+
+        # Apply other filters
+        if sitio and sitio != "ALL":
+            query = query.filter(Household.sitio == sitio)
+            filters.append(f"Sitio: {sitio}")
+        
+        if civil_status and civil_status != "ALL":
+            query = query.filter(Resident.civil_status == civil_status)
+            filters.append(f"Civil Status: {civil_status}")
+
+        if sex and sex != "ALL":
+            query = query.filter(Resident.sex == sex)
+            filters.append(f"Sex: {sex}")
+
+        if education and education != "ALL":
+            query = query.filter(Resident.education == education)
+            filters.append(f"Education: {education}")
+
+        if role and role != "ALL":
+            query = query.filter(Resident.role == role)
+            filters.append(f"Role: {role}")
+
+        # Update filter label
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+
+        self.current_filter = query.order_by(Resident.last_name)
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterResidentForm):
+        # Reset all filter controls to default values
+        form.tbStartAge.setValue(0)
+        form.tbEndAge.setValue(0)
+        form.cbSitio.setCurrentIndex(0)
+        form.cbCivilStatus.setCurrentIndex(0) 
+        form.cbSex.setCurrentIndex(0)
+        form.cbEducation.setCurrentIndex(0)
+        form.cbRole.setCurrentIndex(0)
+        self.apply_filter(form)
 
 class UserWindowController(BaseController):
     def __init__(self, view: BaseWindow):
         super().__init__(view)
-    
+    def default_filter(self):
+        return self.session.query(User).join(User.resident).order_by(User.id, User.date_added)
     def refresh(self):
         self.view.set_search_text('')
-        users = self.session.query(User).join(User.resident).order_by(User.id, User.date_added).all()
+        users = self.current_filter.all()
         data = []
         for user in users:
             username = user.username
@@ -904,7 +997,7 @@ class UserWindowController(BaseController):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
 
-        query = self.session.query(User).join(User.resident)
+        query = self.current_filter.join(User.resident)
 
         if search_terms:
             conditions = []
@@ -1205,19 +1298,46 @@ class UserWindowController(BaseController):
 
     def filter_settings(self):
         filter_form = FilterUserForm()
-
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
         filter_form.exec()
 
-    def toggle_filter(self):
-        pass
+    def apply_filter(self, form: FilterUserForm):
+        position = form.cbPosition.currentText()
+        query = self.default_filter()
+
+        filters = []
+        
+        if position and position != "ALL":           
+            query = query.filter(User.position == position)
+            filters.append(f"Position: {position}")
+            
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+                
+        self.current_filter = query.order_by(Household.household_name).order_by(User.id, User.date_added)
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterUserForm):
+        form.cbPosition.setCurrentIndex(0)
+        self.apply_filter(form)
 
 class BlotterWindowController(BaseController):
     def __init__(self, view : BaseWindow):
         super().__init__(view)
+    
+    def default_filter(self):
+        return self.session.query(Blotter).order_by(desc(Blotter.record_date))
             
     def refresh(self):
         self.view.set_search_text('')
-        blotters = self.session.query(Blotter).order_by(desc(Blotter.record_date)).all()
+        blotters = self.current_filter.all()
         data = []
         for blotter in blotters:
             result = [
@@ -1237,7 +1357,7 @@ class BlotterWindowController(BaseController):
         search_terms = search_text.split() 
         
         # Base query
-        query = self.session.query(Blotter)
+        query = self.current_filter
         
         # Apply AND of ORs: each term must match one of the fields
         if search_terms:
@@ -1439,21 +1559,56 @@ class BlotterWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
                     
-    def filter_settings(self):
-        filter_form = FilterBlotterForm()
+    def apply_filter(self, form: FilterBlotterForm):
+        status = form.cbStatus.currentText()
+        start_date = form.tbStartRecordDate.date().toPython()
+        end_date = form.tbEndRecordDate.date().toPython()
 
-        filter_form.exec()
+        query = self.default_filter()
+        filters = []
 
-    def toggle_filter(self):
-        pass
+        # Apply status filter if not "ALL"
+        if status and status != "ALL":
+            query = query.filter(Blotter.status == status)
+            filters.append(f"Status: {status}")
+
+        # Apply date range filter if dates are valid
+        if start_date and end_date:
+            if start_date < end_date:
+                query = query.filter(Blotter.record_date.between(start_date, end_date))
+                filters.append(f"Date Range: {start_date} to {end_date}")
+            else:
+                QMessageBox.warning(form, "Invalid Date Range", "Start date must be before or equal to end date")
+                return
+
+        # Update filter label
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+
+        self.current_filter = query.order_by(desc(Blotter.record_date))
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterUserForm):
+        # Reset all filter controls to default values
+        form.cbStatus.setCurrentIndex(0)
+        form.tbStartRecordDate.setDate(QDate.currentDate())
+        form.tbEndRecordDate.setDate(QDate.currentDate())
+        self.apply_filter(form)
 
 class CertificateWindowController(BaseController):
     def __init__(self, view : BaseWindow):
         super().__init__(view)
     
+    def default_filter(self):
+        return self.session.query(Certificate).join(Certificate.resident).order_by(desc(Certificate.date_issued))
+    
     def refresh(self):
         self.view.set_search_text('')
-        certificates = self.session.query(Certificate).join(Certificate.resident).order_by(desc(Certificate.date_issued)).all()
+        certificates = self.current_filter.all()
         data = []
         for certificate in certificates:
             resident = certificate.resident 
@@ -1485,7 +1640,7 @@ class CertificateWindowController(BaseController):
         search_terms = search_text.split()
     
         # Start with base query and join household
-        query = self.session.query(Certificate).join(Certificate.resident)
+        query = self.current_filter()
     
         # Apply search filters
         if search_terms:
@@ -1874,13 +2029,45 @@ class CertificateWindowController(BaseController):
                     self.session.commit()
                     self.refresh()
 
-    def filter_settings(self):
-        filter_form = FilterCertificateForm()
+    def apply_filter(self, form: FilterBlotterForm):
+        type = form.cbType.currentText()
+        start_date = form.tbStartRecordDate.date().toPython()
+        end_date = form.tbEndRecordDate.date().toPython()
 
-        filter_form.exec()
+        query = self.default_filter()
+        filters = []
 
-    def toggle_filter(self):
-        pass
+        # Apply status filter if not "ALL"
+        if type and type != "ALL":
+            query = query.filter(Certificate.type == type)
+            filters.append(f"Type: {type}")
+
+        # Apply date range filter if dates are valid
+        if start_date and end_date:
+            if start_date < end_date:
+                query = query.filter(Blotter.record_date.between(start_date, end_date))
+                filters.append(f"Date Range: {start_date} to {end_date}")
+            else:
+                QMessageBox.warning(form, "Invalid Date Range", "Start date must be before or equal to end date")
+                return
+
+        # Update filter label
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+
+        self.current_filter = query.order_by(desc(Blotter.record_date))
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterCertificateForm):
+        # Reset all filter controls to default values
+        form.cbType.setCurrentIndex(0)
+        form.tbStartRecordDate.setDate(QDate.currentDate())
+        form.tbEndRecordDate.setDate(QDate.currentDate())
+        self.apply_filter(form)
 
 class AboutUsWindowController:
     def __init__(self, view: AboutWindow):
@@ -2287,9 +2474,9 @@ class DashboardWindowController:
         today = pd.Timestamp(datetime.today().date())
         df["age"] = (today - df["date_of_birth"]).dt.days // 365
 
-        bins = [0, 18, 35, 50, 65, 120]
-        labels = ["0-18", "19-35", "36-50", "51-65", "66+"]
-        df["age_range"] = pd.cut(df["age"], bins=bins, labels=labels, right=True)
+        bins = [-float('inf'), 17, 30, 59, float('inf')]
+        labels = ["0-17", "18-30", "31-59", "60+"]
+        df["age_range"] = pd.cut(df["age"], bins=bins, labels=labels, right=False)
 
         age_counts = df["age_range"].value_counts().sort_index()
         categories = age_counts.index.tolist()

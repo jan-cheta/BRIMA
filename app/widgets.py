@@ -1,7 +1,7 @@
-from PySide6.QtWidgets import (QGridLayout, QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLineEdit, QLabel, QTableWidgetItem, QHeaderView, QGroupBox, QTextEdit, QFormLayout, QScrollArea, QSizePolicy)
-from PySide6.QtGui import QIcon, QPainter, QPixmap, QImage, QColor, QBrush
-from PySide6.QtCore import QSize, Qt, QRect
+from PySide6.QtWidgets import (QTableWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QLineEdit, QLabel, QTableWidgetItem, QHeaderView, QGroupBox, QTextEdit, QFormLayout, QScrollArea)
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import QSize, Qt
 
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget
@@ -87,7 +87,7 @@ class BaseWindow(QWidget):
         self.btFilter.setIcon(QIcon(":/filter_on"))
         self.btFilter.setIconSize(icon_size)
 
-        self.lbFilter = QLabel(": ")
+        self.lbFilter = QLabel("No Applied Filter")
 
         filter_layout.addWidget(self.btFilter)
         filter_layout.addWidget(self.lbFilter)
@@ -131,6 +131,9 @@ class BaseWindow(QWidget):
     
     def set_search_text(self, text):
         self.tbSearchBar.setText(text)
+    
+    def set_filter_text(self, text):
+        self.lbFilter.setText(text)
 
 class AboutMember(QGroupBox):
     def __init__(self, member, position):
@@ -148,8 +151,6 @@ class AboutMember(QGroupBox):
 
         self.tbMember.setText(member)
         self.tbPosition.setText(position)
-
-
 
 class AboutWindow(QWidget):
     def __init__(self):
