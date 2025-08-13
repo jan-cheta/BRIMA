@@ -24,38 +24,6 @@ class FormHeader(QLabel):
             );
             """)
 
-class TableForm(QWidget):
-    def __init__(self):
-        super().__init__()
-        
-        main_layout = QVBoxLayout(self)
-        
-        search = QWidget()
-        search.setObjectName('searchbar')
-        search_layout = QHBoxLayout(search)
-        
-        icon_size = QSize(24, 24)
-        
-        self.tbSearchBar = QLineEdit()
-        self.tbSearchBar.setObjectName('tbSearchBar')
-        self.btSearch = QPushButton("Search")
-        self.btSearch.setIconSize(icon_size)
-        self.btSearch.setObjectName('btSearch')
-        self.btSearch.setIcon(QIcon(":/search"))
-        
-        search_layout.addWidget(self.tbSearchBar)
-        search_layout.addWidget(self.btSearch)
-        
-        self.table = QTableWidget()
-        self.table.setObjectName('table')
-        
-        self.table.verticalHeader().setVisible(False)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-    
-        main_layout.addWidget(search)
-        main_layout.addWidget(self.table)
-        
 class UpdateBar(QWidget):
     def __init__(self):
         super().__init__()
