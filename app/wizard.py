@@ -236,8 +236,19 @@ class InitWizard(QWizard):
         position = self.user_page.cbPosition.currentText().strip().upper()
 
         # Save to DB
-        barangay = Barangay(name=barangay_name, history=barangay_history, mission=barangay_mission, vision=barangay_vision)
-        self.session.add(barangay)
+        # Check if a barangay already exists
+        existing_barangay = self.session.query(Barangay).first()
+        
+        if existing_barangay:
+            # Update existing barangay
+            existing_barangay.name = barangay_name
+            existing_barangay.history = barangay_history
+            existing_barangay.mission = barangay_mission
+            existing_barangay.vision = barangay_vision
+        else:
+            # Create new barangay if none exists
+            barangay = Barangay(name=barangay_name, history=barangay_history, mission=barangay_mission, vision=barangay_vision)
+            self.session.add(barangay)
 
         household = Household(household_name=household_name, house_no=house_no, street=street, sitio=sitio, landmark=landmark)
         self.session.add(household)

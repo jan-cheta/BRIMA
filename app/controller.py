@@ -113,7 +113,7 @@ class BrimaController:
         self.view.lbBrgy.setText(f"{barangay.name}")
     
     def apply_permissions(self):
-        is_admin = (self.user.position in ['CAPTAIN', 'SECRETARY'])
+        is_admin = (self.user.position in ['CAPTAIN', 'SECRETARY', 'TREASURER'])
 
         self.view.btAdmin.setVisible(is_admin)
 
@@ -1933,10 +1933,28 @@ class CertificateWindowController(BaseController):
             resident.last_name,
             resident.suffix
         ]))
+        sex = resident.sex
         age = self.calculate_age(resident.date_of_birth)
         date_str = certificate.date_issued.strftime("%dth day of %B, %Y")
         purpose = certificate.purpose
         cert_type = certificate.type
+
+        if sex.upper() == "MALE":
+            pronouns = {
+                "{PRONOUN_SUBJ}": "he",
+                "{PRONOUN_OBJ}": "him",
+                "{PRONOUN_POS}": "his",
+                "{PRONOUN_POS_ADJ}": "his",  # possessive adjective
+                "{PRONOUN_REFLEX}": "himself"
+            }
+        elif sex.upper() == "FEMALE":
+            pronouns = {
+                "{PRONOUN_SUBJ}": "she",
+                "{PRONOUN_OBJ}": "her",
+                "{PRONOUN_POS}": "hers",
+                "{PRONOUN_POS_ADJ}": "her",  # possessive adjective
+                "{PRONOUN_REFLEX}": "herself"
+            }
 
         # Replace placeholders
         replacements = {
@@ -1945,7 +1963,8 @@ class CertificateWindowController(BaseController):
             "{CIVIL}": resident.civil_status,
             "{CITIZEN}": resident.citizenship,
             "{DATE}": date_str,
-            "{PURPOSE}": purpose
+            "{PURPOSE}": purpose,
+            **pronouns
         }
 
         self.replace_placeholders_in_doc(doc, replacements)

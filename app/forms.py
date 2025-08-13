@@ -373,7 +373,7 @@ class ResidentForm(QWidget):
         self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
         self.tbCitizenship = QLineEdit('FILIPINO')
         self.cbSex = QComboBox()
-        self.cbSex.addItems(['MALE', 'FEMALE', 'OTHER'])
+        self.cbSex.addItems(['MALE', 'FEMALE'])
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
@@ -596,7 +596,7 @@ class FilterResidentForm(QDialog):
         self.cbCivilStatus = QComboBox()
         self.cbCivilStatus.addItems(["ALL", "SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
         self.cbSex = QComboBox()
-        self.cbSex.addItems(['ALL','MALE', 'FEMALE', 'OTHER'])
+        self.cbSex.addItems(['ALL','MALE', 'FEMALE'])
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
@@ -668,7 +668,7 @@ class UserForm(QWidget):
         self.tbPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.tbConfirmPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.cbPosition = QComboBox()
-        self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"])
+        self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD"])
         
         main_layout.addRow('Name:', self.cbName)
         main_layout.addRow('User Name:', self.tbUserName)
@@ -773,7 +773,7 @@ class FilterUserForm(QDialog):
         form_layout = QFormLayout(self.form)
         self.filterbar = FilterBar()
         self.cbPosition = QComboBox()
-        self.cbPosition.addItems(['ALL', 'CAPTAIN', 'SECRETARY', 'KAGAWAD', 'TANOD'])
+        self.cbPosition.addItems(['ALL', 'CAPTAIN', 'SECRETARY', 'TREASURER', 'KAGAWAD'])
         form_layout.addRow('Position: ', self.cbPosition)
                 
         main_layout.addWidget(self.header)
