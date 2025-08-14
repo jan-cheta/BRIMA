@@ -487,6 +487,7 @@ class HouseholdWindowController(BaseController):
 class ResidentWindowController(BaseController):
     def __init__(self, view: BaseWindow, parent: BrimaController):
         super().__init__(view)
+        self.parent = parent
         
     def default_filter(self):
         return self.session.query(Resident).outerjoin(Resident.household).order_by(Resident.last_name)
@@ -837,7 +838,6 @@ class ResidentWindowController(BaseController):
             QMessageBox.information(update_form, "Success", "Resident updated successfully!")
             update_form.accept()
             self.refresh()
-            self.parent.set_titles()
         except Exception as e:
             self.session.rollback()
             QMessageBox.critical(update_form, "Error", f"Failed to update resident: {str(e)}")
@@ -906,8 +906,6 @@ class ResidentWindowController(BaseController):
                 )
     
                 if reply == QMessageBox.Yes:
-                    if resident.id == self.parent.user.resident.id:
-                        self.parent.force_logout()
                     self.session.delete(resident)
                     self.session.commit()
                     self.refresh()
