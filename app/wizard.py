@@ -116,19 +116,18 @@ class ResidentPage(QWizardPage):
         self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
         self.tbCitizenship = QLineEdit()
         self.cbSex = QComboBox()
-        self.cbSex.addItems(['MALE', 'FEMALE', 'OTHER'])
+        self.cbSex.addItems(['MALE', 'FEMALE'])
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
-                'SOME ELEMENTARY',
+                'ELEMENTARY LEVEL',
                 'ELEMENTARY GRADUATE',
-                'SOME HIGH SCHOOL',
                 'HIGH SCHOOL GRADUATE',
-                'SOME COLLEGE',
-                'COLLEGE GRADUATE',
-                "SOME/COMPLETED MASTER'S DEGREE",
-                'MASTERS GRADUATE',
-                'VOCATIONAL/TVET'
+                'COLLEGE LEVEL',
+                'COLLEGE DEGREE',
+                'MASTERS DEGREE',
+                'DOCTORATE DEGREE',
+                'VOCATIONAL/TESDA'
             ]
         )
         self.tbRemarks = QLineEdit()
@@ -174,7 +173,7 @@ class UserPage(QWizardPage):
         self.tbPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.tbConfirmPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.cbPosition = QComboBox()
-        self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"])
+        self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD"])
         
         main_layout.addRow('User Name:', self.tbUserName)
         main_layout.addRow('Password:', self.tbPassword)

@@ -91,7 +91,7 @@ class BrimaController:
         self.user = user 
 
         self.household_control = HouseholdWindowController(self.view.household_window)
-        self.resident_control = ResidentWindowController(self.view.resident_window)
+        self.resident_control = ResidentWindowController(self.view.resident_window, self)
         self.user_control = UserWindowController(self.view.admin_window)
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
@@ -117,6 +117,7 @@ class BrimaController:
         self.view.stack.setCurrentIndex(7)
     
     def set_titles(self):
+        self.user = self.session.query(User).get(self.user.id)
         self.view.lbUser.setText(f"HELLO, {self.user.resident.first_name} {self.user.resident.last_name}!")
         barangay = self.session.query(Barangay).first()
         self.view.lbBrgy.setText(f"{barangay.name}")
@@ -484,7 +485,7 @@ class HouseholdWindowController(BaseController):
         self.apply_filter(form)
          
 class ResidentWindowController(BaseController):
-    def __init__(self, view: BaseWindow):
+    def __init__(self, view: BaseWindow, parent: BrimaController):
         super().__init__(view)
         
     def default_filter(self):
@@ -836,6 +837,7 @@ class ResidentWindowController(BaseController):
             QMessageBox.information(update_form, "Success", "Resident updated successfully!")
             update_form.accept()
             self.refresh()
+            self.parent.set_titles()
         except Exception as e:
             self.session.rollback()
             QMessageBox.critical(update_form, "Error", f"Failed to update resident: {str(e)}")
@@ -904,6 +906,8 @@ class ResidentWindowController(BaseController):
                 )
     
                 if reply == QMessageBox.Yes:
+                    if resident.id == self.parent.user.resident.id:
+                        self.parent.force_logout()
                     self.session.delete(resident)
                     self.session.commit()
                     self.refresh()
@@ -2295,6 +2299,10 @@ class SettingsWindowController:
                 .join(Resident.household)
             )
             df_resident_household = pd.read_sql(stmt_resident_household, self.session.bind)
+            # Add age column
+            if not df_resident_household.empty and "date_of_birth" in df_resident_household.columns:
+                today = pd.Timestamp(datetime.today().date())
+                df_resident_household["age"] = (today - pd.to_datetime(df_resident_household["date_of_birth"])).dt.days // 365
 
             # Export Resident & Certificate data
             stmt_resident_certificate = (
@@ -2312,7 +2320,7 @@ class SettingsWindowController:
             )
             df_resident_certificate = pd.read_sql(stmt_resident_certificate, self.session.bind)
 
-            # Export Blotter data
+            # Export Blotter data (full table)
             stmt_blotter = select(Blotter)
             df_blotter = pd.read_sql(stmt_blotter, self.session.bind)
 
@@ -2347,6 +2355,10 @@ class SettingsWindowController:
                 .join(Resident.household)  
             )
             df_resident_user = pd.read_sql(stmt_resident_user, self.session.bind)
+            # Add age column
+            if not df_resident_user.empty and "date_of_birth" in df_resident_user.columns:
+                today = pd.Timestamp(datetime.today().date())
+                df_resident_user["age"] = (today - pd.to_datetime(df_resident_user["date_of_birth"])).dt.days // 365
 
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
                 df_resident_household.to_excel(writer, sheet_name="RBI", index=False)
