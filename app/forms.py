@@ -377,7 +377,6 @@ class ResidentForm(QWidget):
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
-                'ALL',
                 'ELEMENTARY LEVEL',
                 'ELEMENTARY GRADUATE',
                 'HIGH SCHOOL GRADUATE',

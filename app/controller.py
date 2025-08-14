@@ -67,7 +67,7 @@ class MainController:
         reply = QMessageBox.question(
                             self.view,  # Parent widget
                             "Confirm Logout?",
-                            f"Are you sure you want to logoout?",
+                            f"Are you sure you want to logout?",
                             QMessageBox.Yes | QMessageBox.No,
                             QMessageBox.No
                         )
