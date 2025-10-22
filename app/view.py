@@ -58,7 +58,7 @@ class BrimaView(QWidget):
         sidebar.setObjectName('sidebar')
         sidebar_layout = QVBoxLayout(sidebar)
 
-        self.btDashboard = QPushButton('Dahsboard')
+        self.btDashboard = QPushButton('Dashboard')
         self.btDashboard.setObjectName('btDashboard')
         self.icon_helper(self.btDashboard, ":/icnDashboardBlack")
 

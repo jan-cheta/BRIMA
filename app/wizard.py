@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QApplication, QWizard, QWizardPage, QLineEdit, QLabel, QVBoxLayout, QMessageBox, QComboBox, QFormLayout, QGroupBox,
-    QDateEdit, QTextEdit
+    QDateEdit, QTextEdit, QWidget, QHBoxLayout
 )
+from PySide6.QtCore import QDate
 from sqlalchemy.orm import Session
 from model import Barangay, Household, Resident, User 
 import sys
@@ -14,8 +15,8 @@ class BarangayPage(QWizardPage):
 
         layout = QVBoxLayout()
         self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText("Barangay Name")
-        layout.addWidget(QLabel("Barangay Name:"))
+        self.name_edit.setPlaceholderText("Barangay")
+        layout.addWidget(QLabel("*Barangay Name:"))
         layout.addWidget(self.name_edit)
 
         self.history_edit = QTextEdit()
@@ -56,7 +57,7 @@ class HouseholdPage(QWizardPage):
         self.cbSitio.addItems(['CASARATAN', 'CABAOANGAN', 'TRAMO'])
         self.tbLandmark = QLineEdit()
         
-        layout.addRow('Household Name:', self.tbHouseholdName)
+        layout.addRow('*Household Name:', self.tbHouseholdName)
         layout.addRow('House No:', self.tbHouseNo)
         layout.addRow('Street:', self.tbStreet)
         layout.addRow('Sitio:', self.cbSitio)
@@ -74,7 +75,11 @@ class ResidentPage(QWizardPage):
         super().__init__()
         self.setTitle("Enter Resident Information")
 
-        layout = QVBoxLayout(self)  # Use QVBoxLayout for main layout
+        rwidget = QWidget()
+        lwidget = QWidget()
+        llayout = QVBoxLayout(rwidget)  # Use QVBoxLayout for main layout
+        rlayout = QVBoxLayout(lwidget)
+        main_layout = QHBoxLayout(self)
 
         # Personal Information Section
         personal_group = QGroupBox('Personal Information')
@@ -85,11 +90,12 @@ class ResidentPage(QWizardPage):
         self.tbSuffix = QLineEdit()
         self.tbBirthDate = QDateEdit()
         self.tbBirthDate.setCalendarPopup(True)
-        personal_layout.addRow('First Name:', self.tbFirstName)
-        personal_layout.addRow('Last Name:', self.tbLastName)
+        self.tbBirthDate.setDate(QDate.currentDate())
+        personal_layout.addRow('*First Name:', self.tbFirstName)
         personal_layout.addRow('Middle Name:', self.tbMiddleName)
+        personal_layout.addRow('*Last Name:', self.tbLastName)
         personal_layout.addRow('Suffix:', self.tbSuffix)
-        personal_layout.addRow('Birth Date:', self.tbBirthDate)
+        personal_layout.addRow('*Birth Date:', self.tbBirthDate)
         personal_group.setLayout(personal_layout)
         
         # Contact Information Section
@@ -110,19 +116,18 @@ class ResidentPage(QWizardPage):
         self.cbCivilStatus.addItems(["SINGLE", "MARRIED", "DIVORCED", "SEPARATED", "WIDOWED"])
         self.tbCitizenship = QLineEdit()
         self.cbSex = QComboBox()
-        self.cbSex.addItems(['MALE', 'FEMALE', 'OTHER'])
+        self.cbSex.addItems(['MALE', 'FEMALE'])
         self.cbEducation = QComboBox()
         self.cbEducation.addItems(
             [
-                'SOME ELEMENTARY',
+                'ELEMENTARY LEVEL',
                 'ELEMENTARY GRADUATE',
-                'SOME HIGH SCHOOL',
                 'HIGH SCHOOL GRADUATE',
-                'SOME COLLEGE',
-                'COLLEGE GRADUATE',
-                "SOME/COMPLETED MASTER'S DEGREE",
-                'MASTERS GRADUATE',
-                'VOCATIONAL/TVET'
+                'COLLEGE LEVEL',
+                'COLLEGE DEGREE',
+                'MASTERS DEGREE',
+                'DOCTORATE DEGREE',
+                'VOCATIONAL/TESDA'
             ]
         )
         self.tbRemarks = QLineEdit()
@@ -130,16 +135,20 @@ class ResidentPage(QWizardPage):
         self.cbRole.addItems(['Head', 'Spouse', 'Child'])
         other_layout.addRow('Occupation:', self.tbOccupation)
         other_layout.addRow('Civil Status:', self.cbCivilStatus)
-        other_layout.addRow('Citizenship:', self.tbCitizenship)
+        other_layout.addRow('*Citizenship:', self.tbCitizenship)
         other_layout.addRow('Sex:', self.cbSex)
         other_layout.addRow('Education:', self.cbEducation)
         other_layout.addRow('Remarks:', self.tbRemarks)
         other_layout.addRow('Role:', self.cbRole)
         other_group.setLayout(other_layout)
 
-        layout.addWidget(personal_group)
-        layout.addWidget(contact_group)
-        layout.addWidget(other_group)
+        rlayout.addWidget(personal_group)
+        rlayout.addWidget(contact_group)
+        llayout.addWidget(other_group)
+        
+        main_layout.addWidget(lwidget)
+        main_layout.addWidget(rwidget)
+
 
     def validatePage(self):
         if not self.tbFirstName.text().strip() or not self.tbLastName.text().strip():
@@ -164,7 +173,7 @@ class UserPage(QWizardPage):
         self.tbPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.tbConfirmPassword.setEchoMode(QLineEdit.EchoMode.Password)
         self.cbPosition = QComboBox()
-        self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"])
+        self.cbPosition.addItems(["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD"])
         
         main_layout.addRow('User Name:', self.tbUserName)
         main_layout.addRow('Password:', self.tbPassword)
@@ -201,7 +210,7 @@ class InitWizard(QWizard):
 
     def accept(self):
         # Gather all the data from pages
-        barangay_name = self.barangay_page.name_edit.text().strip().upper()
+        barangay_name = f"BARANGAY {self.barangay_page.name_edit.text().strip()}".upper()
         barangay_history = self.barangay_page.history_edit.toPlainText().strip().upper()
         barangay_mission = self.barangay_page.mission_edit.toPlainText().strip().upper()
         barangay_vision = self.barangay_page.vision_edit.toPlainText().strip().upper()
@@ -236,8 +245,19 @@ class InitWizard(QWizard):
         position = self.user_page.cbPosition.currentText().strip().upper()
 
         # Save to DB
-        barangay = Barangay(name=barangay_name, history=barangay_history, mission=barangay_mission, vision=barangay_vision)
-        self.session.add(barangay)
+        # Check if a barangay already exists
+        existing_barangay = self.session.query(Barangay).first()
+        
+        if existing_barangay:
+            # Update existing barangay
+            existing_barangay.name = barangay_name
+            existing_barangay.history = barangay_history
+            existing_barangay.mission = barangay_mission
+            existing_barangay.vision = barangay_vision
+        else:
+            # Create new barangay if none exists
+            barangay = Barangay(name=barangay_name, history=barangay_history, mission=barangay_mission, vision=barangay_vision)
+            self.session.add(barangay)
 
         household = Household(household_name=household_name, house_no=house_no, street=street, sitio=sitio, landmark=landmark)
         self.session.add(household)

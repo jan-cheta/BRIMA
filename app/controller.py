@@ -3,12 +3,14 @@ from model import Household, Resident, User, Blotter, Certificate, Barangay
 from forms import (AddHouseholdForm, AddResidentForm, BrowseResidentForm,
     UpdateHouseholdForm, BrowseHouseholdForm, UpdateResidentForm, AddUserForm,
     UpdateUserForm, BrowseUserForm, AddBlotterForm, UpdateBlotterForm, BrowseBlotterForm,
-    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm
+    AddCertificateForm, UpdateCertificateForm, BrowseCertificateForm, FilterHouseholdForm, FilterResidentForm, FilterUserForm,
+    FilterBlotterForm, FilterCertificateForm
 )
 from view import  BrimaView, MainView, LoginView
 from widgets import BaseWindow, AboutWindow, SettingsWindow, DashboardWindow
 from PySide6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PySide6.QtCore import Qt, QDate, QSize
+from PySide6.QtGui import QColor, QFont
 import pyqtgraph as pg
 from pyqtgraph import PlotWidget, BarGraphItem, TextItem
 from sqlalchemy import or_, and_, desc, select, create_engine, func
@@ -29,24 +31,17 @@ class MainController:
         self.view = view
         self.user = None
         self.brima = self.view.brima
-        self.brima_control = BrimaController(self.brima, None)
+        self.brima_control = BrimaController(self.brima, None, self)
         self.view.login.btLogin.clicked.connect(self.login)
         self.brima.btLogout.clicked.connect(self.logout)
         self.view.stack.setCurrentIndex(0)
 
     def login(self):
-        """
-        Login page logic for applying permissions and switching to BrimaView
-
-        Returns:
-            None
-        """
-        
         data = self.view.login.get_fields()
         user = self.is_valid_login(self.session, data)
         
         if user:
-            QMessageBox.information(self.view, 'Success', 'Login Sucessful')
+            QMessageBox.information(self.view, 'Success', 'Login Sucessful!')
             self.view.login.tbUsername.clear()
             self.view.login.tbPassword.clear()
             self.user = user
@@ -60,18 +55,6 @@ class MainController:
             QMessageBox.critical(self.view, 'Invalid Credentials', 'Please input valid credentials')
 
     def is_valid_login(self, session: Session, data: dict) -> User:
-        """
-        
-        Login validation login that converts password to hash then checks the database for user
-
-        Args:
-            session (Session): The session to be used to query the database for users
-            data (dict): The data from the fields of the login page
-
-        Returns:
-            User: returns the user if query is valid 
-            
-        """        
         user = session.query(User).filter(User.username==data.get('username')).first()
 
         if user and bcrypt.checkpw(data.get('password').encode('utf-8'), user.password):
@@ -80,66 +63,76 @@ class MainController:
             return None
 
     def logout(self):
+        
+        reply = QMessageBox.question(
+                            self.view,  # Parent widget
+                            "Confirm Logout?",
+                            f"Are you sure you want to logout?",
+                            QMessageBox.Yes | QMessageBox.No,
+                            QMessageBox.No
+                        )
+
+        if reply == QMessageBox.Yes:
+            self.brima_control.user = None
+            self.view.stack.setCurrentIndex(0)
+            self.view.showNormal()
+    
+    def force_logout(self):
         self.brima_control.user = None
         self.view.stack.setCurrentIndex(0)
         self.view.showNormal()
     
     
 class BrimaController:
-    def __init__(self, view : BrimaView, user):
+    def __init__(self, view : BrimaView, user, parent: MainController):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
         self.user = user 
 
         self.household_control = HouseholdWindowController(self.view.household_window)
-        self.resident_control = ResidentWindowController(self.view.resident_window)
+        self.resident_control = ResidentWindowController(self.view.resident_window, self)
         self.user_control = UserWindowController(self.view.admin_window)
         self.blotter_control = BlotterWindowController(self.view.blotter_window)
         self.certificate_control = CertificateWindowController(self.view.certificate_window)
         self.about_control = AboutUsWindowController(self.view.about_window)
-        self.settings_control = SettingsWindowController(self.view.settings_window)
+        self.settings_control = SettingsWindowController(self.view.settings_window, parent)
         self.dashboard_control = DashboardWindowController(self.view.dashboard_window)
 
         self.view.btHousehold.clicked.connect(lambda: self.view.stack.setCurrentIndex(0))
+        self.view.btHousehold.clicked.connect(self.household_control.refresh)
         self.view.btResident.clicked.connect(lambda: self.view.stack.setCurrentIndex(1))
+        self.view.btResident.clicked.connect(self.resident_control.refresh)
         self.view.btAdmin.clicked.connect(lambda: self.view.stack.setCurrentIndex(2))
+        self.view.btAdmin.clicked.connect(self.user_control.refresh)
         self.view.btBlotter.clicked.connect(lambda: self.view.stack.setCurrentIndex(3))
+        self.view.btBlotter.clicked.connect(self.blotter_control.refresh)
         self.view.btCertificate.clicked.connect(lambda: self.view.stack.setCurrentIndex(4))
+        self.view.btCertificate.clicked.connect(self.certificate_control.refresh)
         self.view.btAboutUs.clicked.connect(lambda: self.view.stack.setCurrentIndex(5))
         self.view.btAboutUs.clicked.connect(self.about_control.load_data)
         self.view.btSettings.clicked.connect(lambda: self.view.stack.setCurrentIndex(6))
         self.view.btDashboard.clicked.connect(lambda: self.view.stack.setCurrentIndex(7))
         self.view.btDashboard.clicked.connect(self.dashboard_control.load_data)
         self.view.stack.setCurrentIndex(7)
-
     
     def set_titles(self):
+        self.user = self.session.query(User).get(self.user.id)
         self.view.lbUser.setText(f"HELLO, {self.user.resident.first_name} {self.user.resident.last_name}!")
         barangay = self.session.query(Barangay).first()
         self.view.lbBrgy.setText(f"{barangay.name}")
     
     def apply_permissions(self):
-        is_admin = (self.user.position in ['CAPTAIN', 'SECRETARY'])
+        is_admin = (self.user.position in ['CAPTAIN', 'SECRETARY', 'TREASURER'])
 
         self.view.btAdmin.setVisible(is_admin)
 
-        if not is_admin:
+        if is_admin:
             self.setup_admin(self.view)
         else:
             self.setup_user(self.view)
 
-    def setup_admin(self, view: BrimaView) -> None:
-        """
-        
-        Sets up the all widgets to visible 
-
-        Args:
-            view (BrimaView): The main app UI
-
-        Returns:
-            None
-        """
+    def setup_user(self, view: BrimaView) -> None:
         for win in (
             view.household_window,
             view.resident_window,
@@ -153,17 +146,7 @@ class BrimaController:
         for btn in (view.settings_window.edit_barangay, view.settings_window.backup):
             btn.setEnabled(False)
 
-    def setup_user(self, view: BrimaView) -> None:
-        """
-        
-        Sets admin level widgets to not visible
-
-        Args:
-            view (BrimaView): The main app UI
-
-        Returns:
-            None
-        """
+    def setup_admin(self, view: BrimaView) -> None:
         for win in (
             view.household_window,
             view.resident_window,
@@ -177,11 +160,12 @@ class BrimaController:
         for btn in (view.settings_window.edit_barangay, view.settings_window.backup):
             btn.setEnabled(True)
 
-class HouseholdWindowController:
+class BaseController:
     def __init__(self, view: BaseWindow):
         self.db = Database()
         self.session = self.db.get_session()
         self.view = view
+        self.current_filter = self.default_filter()
         self.refresh()
         
         self.view.btRefresh.clicked.connect(self.refresh)
@@ -191,10 +175,48 @@ class HouseholdWindowController:
         self.view.btEdit.clicked.connect(self.edit)
         self.view.btDelete.clicked.connect(self.delete)
         self.view.btBrowse.clicked.connect(self.browse)
+        self.view.btFilter.clicked.connect(self.filter_settings)
+
+    def default_filter(self):
+        pass
+
+    def refresh(self):
+        pass
+
+    def search(self):
+        pass
+
+    def add(self):
+        pass
+
+    def edit(self):
+        pass
+    
+    def delete(self):
+        pass
+
+    def browse(self):
+        pass
+
+    def filter_settings(self):
+        pass
+
+    def apply_filter(self):
+        pass
+
+    def clear_filter(self):
+        pass
+
+class HouseholdWindowController(BaseController):
+    def __init__(self, view: BaseWindow):
+        super().__init__(view)
+
+    def default_filter(self):
+        return self.session.query(Household).order_by(Household.household_name)
         
     def refresh(self):
         self.view.set_search_text('')
-        households = self.session.query(Household).order_by(Household.household_name).all()
+        households = self.current_filter.all()
         data = []
         for household in households:
             result = [
@@ -204,17 +226,15 @@ class HouseholdWindowController:
                 f"{household.house_no} {household.street} {household.sitio} {household.landmark}"
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
         self.view.load_table(['id', 'Date Added', 'Household Name', 'Address'], data)
     
     def search(self):
         search_text = self.view.get_search_text().lower()  
         search_terms = search_text.split() 
         
-        # Base query
-        query = self.session.query(Household)
+        query = self.current_filter
         
-        # Apply AND of ORs: each term must match one of the fields
         if search_terms:
             conditions = []
             for term in search_terms:
@@ -256,7 +276,7 @@ class HouseholdWindowController:
             add_form = AddHouseholdForm()
         
             # Button signals
-            add_form.addbar.btAdd.clicked.connnect(lambda: self.on_add_button_click(add_form))
+            add_form.addbar.btAdd.clicked.connect(lambda: self.on_add_button_click(add_form))
             add_form.addbar.btCancel.clicked.connect(add_form.reject)
         
             # Execute the form as a modal dialog
@@ -265,10 +285,11 @@ class HouseholdWindowController:
     def on_add_button_click(self, add_form):
         data = add_form.get_fields()
 
-        validate = self.validate_addlidate_add(self.session, data)
+        validate = self.validate_add(self.session, data)
         
         if not validate[0]:
             QMessageBox.critical(add_form, "Error", validate[1])
+            return
         
         try:
             # Add the new resident to the session and commit the transaction
@@ -281,41 +302,18 @@ class HouseholdWindowController:
             self.session.rollback()
             QMessageBox.critical(add_form, "Error", f"Failed to add household: {str(e)}")
 
-    def validate_add(session: Session, data: dict) -> tuple[bool, str]:
-        """
-    
-        Validation logic for adding household
-
-        Args:
-            session (Session): The session to be used to query the database.
-            data (dict): The data from the fields.
-
-        Returns:
-            tuple[bool,str]: boolean to show validity and error message if not valid
-        """ 
+    def validate_add(self, session: Session, data: dict) -> tuple[bool, str]:
         household_name = data.get("household_name")
 
-        # Check if household_name is null
         if not household_name:
              return False, "Household name cannot be empty."
     
-        # Check if household already exists
-        exist_household = session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
-        if exist_household:
+        household_exist = session.query(Household).filter(func.upper(Household.household_name) == household_name.upper()).first()
+        if household_exist:
              return False, "Household name already exists."
         return True, ""
 
-    def newhousehold_make(data: dict) -> Household:
-        """
-    
-        Creates a new Household entity from a data dictionary
-
-        Args:
-            data (dict): Household data to be used for new entity
-
-        Returns:
-            Household: New Household entity
-        """
+    def newhousehold_make(self, data: dict) -> Household:
         return Household(
             household_name = data.get("household_name", "").upper(),
             house_no = data.get("house_no", "").upper(),
@@ -324,11 +322,10 @@ class HouseholdWindowController:
             landmark = data.get("landmark", "").upper()
          )
 
-    
     def edit(self):
         try:
             row_id = self.view.get_table_row()
-        except:
+        except Exception:
             QMessageBox.warning(self.view, 'Select Row', 'Please Select Household to Edit')
             return
         
@@ -455,24 +452,49 @@ class HouseholdWindowController:
                     self.session.commit()
                     self.refresh()
 
-class ResidentWindowController:
-    def __init__(self, view: BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
+    def filter_settings(self):
+        filter_form = FilterHouseholdForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()
+
+    def apply_filter(self, form: FilterHouseholdForm):
+        sitio = form.cbSitio.currentText()
+        query = self.default_filter()
+
+        filters = []
+        
+        if sitio and sitio != "ALL":           
+            query = query.filter(Household.sitio == sitio)
+            filters.append(f"Sitio: {sitio}")
+            
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+                
+        self.current_filter = query.order_by(Household.household_name)
         self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterHouseholdForm):
+        form.cbSitio.setCurrentIndex(0)
+        self.apply_filter(form)
+         
+class ResidentWindowController(BaseController):
+    def __init__(self, view: BaseWindow, parent: BrimaController):
+        super().__init__(view)
+        self.parent = parent
         
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
-        
+    def default_filter(self):
+        return self.session.query(Resident).outerjoin(Resident.household).order_by(Resident.last_name)
+    
     def refresh(self):
         self.view.set_search_text('')
-        residents = self.session.query(Resident).order_by(Resident.last_name).all()
+        residents = self.current_filter.all()
         data = []
         for resident in residents:
             full_name = " ".join(filter(None, [resident.first_name, resident.middle_name, resident.suffix]))
@@ -492,20 +514,24 @@ class ResidentWindowController:
             result = [
                 resident.id,
                 resident.date_added,
-                full_name,
                 resident.role,
+                full_name,
+                resident.sex,
                 household_name,
+                resident.date_of_birth,
+                resident.civil_status,
+                resident.remarks,
                 address
             ]
             data.append(result)
-        
-        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
+        self.view.load_table(['id', 'Date Added','Role', 'Full Name', 'Sex', 'Household Name', 'Birth Date', 'Civil Status', 'Remarks', 'Address'], data)
 
     def search(self):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
 
-        query = self.session.query(Resident).join(Resident.household)
+        query = self.current_filter
 
         if search_terms:
             conditions = []
@@ -551,14 +577,18 @@ class ResidentWindowController:
             result = [
                 resident.id,
                 resident.date_added,
-                full_name,
                 resident.role,
+                full_name,
+                resident.sex,
                 household_name,
+                resident.date_of_birth,
+                resident.civil_status,
+                resident.remarks,
                 address
             ]
             data.append(result)
         
-        self.view.load_table(['id', 'Date Added', 'Full Name', 'Role', 'Household Name', 'Address'], data)
+        self.view.load_table(['id', 'Date Added','Role', 'Full Name', 'Sex', 'Household Name', 'Birth Date', 'Civil Status', 'Remarks', 'Address'], data)
     
     def add(self):
         add_form = AddResidentForm()
@@ -678,11 +708,14 @@ class ResidentWindowController:
                 update_form.form.cbHousehold.clear()
                 update_form.form.cbHousehold.addItems(household_names)
                 update_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
-                self.autofill_household(household_dict, update_form)
     
-                update_form.form.cbHousehold.currentTextChanged.connect(
-                    lambda: self.autofill_household(household_dict, update_form)
-                )
+                try:
+                    self.autofill_household(household_dict, update_form)
+                    update_form.form.cbHousehold.currentTextChanged.connect(
+                        lambda: self.autofill_household(household_dict, update_form)
+                    )
+                except:
+                    QMessageBox.warning(self.view, 'Missing Household', 'Please Update Household of this Resident')
     
                 # Set initial values
                 update_form.set_fields(
@@ -847,7 +880,10 @@ class ResidentWindowController:
     
                 # Populate household combo box
                 browse_form.form.cbHousehold.setCurrentText(resident.household.household_name if resident.household else '')
-                self.autofill_household(household_dict, browse_form)
+                try:
+                    self.autofill_household(household_dict, browse_form)
+                except:
+                    QMessageBox.warning(self.view, 'Missing Household', 'Please Update Household of this Resident')
                 
                 browse_form.exec()
         
@@ -874,24 +910,92 @@ class ResidentWindowController:
                     self.session.commit()
                     self.refresh()
 
-class UserWindowController:
-    def __init__(self, view: BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
-        self.refresh()
+    def filter_settings(self):
+        filter_form = FilterResidentForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()
+
+    def apply_filter(self, form: FilterResidentForm):
+        # Get filter values
+        start_age = form.tbStartAge.value()
+        end_age = form.tbEndAge.value() 
+        sitio = form.cbSitio.currentText()
+        civil_status = form.cbCivilStatus.currentText()
+        sex = form.cbSex.currentText()
+        education = form.cbEducation.currentText()
+        role = form.cbRole.currentText()
+
+        query = self.default_filter()
+        filters = []
+
+        # Apply age filter
+        if start_age > 0 or end_age > 0:
+            today = date.today()
+            if start_age > 0:
+                max_birth_date = date(today.year - start_age, today.month, today.day)
+                query = query.filter(Resident.date_of_birth <= max_birth_date)
+                filters.append(f"Min Age: {start_age}")
+            if end_age > 0:
+                min_birth_date = date(today.year - end_age, today.month, today.day)
+                query = query.filter(Resident.date_of_birth >= min_birth_date)
+                filters.append(f"Max Age: {end_age}")
+
+        # Apply other filters
+        if sitio and sitio != "ALL":
+            query = query.filter(Household.sitio == sitio)
+            filters.append(f"Sitio: {sitio}")
         
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
+        if civil_status and civil_status != "ALL":
+            query = query.filter(Resident.civil_status == civil_status)
+            filters.append(f"Civil Status: {civil_status}")
+
+        if sex and sex != "ALL":
+            query = query.filter(Resident.sex == sex)
+            filters.append(f"Sex: {sex}")
+
+        if education and education != "ALL":
+            query = query.filter(Resident.education == education)
+            filters.append(f"Education: {education}")
+
+        if role and role != "ALL":
+            query = query.filter(Resident.role == role)
+            filters.append(f"Role: {role}")
+
+        # Update filter label
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+
+        self.current_filter = query.order_by(Resident.last_name)
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterResidentForm):
+        # Reset all filter controls to default values
+        form.tbStartAge.setValue(0)
+        form.tbEndAge.setValue(0)
+        form.cbSitio.setCurrentIndex(0)
+        form.cbCivilStatus.setCurrentIndex(0) 
+        form.cbSex.setCurrentIndex(0)
+        form.cbEducation.setCurrentIndex(0)
+        form.cbRole.setCurrentIndex(0)
+        self.apply_filter(form)
+
+class UserWindowController(BaseController):
+    def __init__(self, view: BaseWindow):
+        super().__init__(view)
+
+    def default_filter(self):
+        return self.session.query(User).outerjoin(User.resident).order_by(User.id, User.date_added)
     
     def refresh(self):
         self.view.set_search_text('')
-        users = self.session.query(User).join(User.resident).order_by(User.id, User.date_added).all()
+        users = self.current_filter.all()
         data = []
         for user in users:
             username = user.username
@@ -914,14 +1018,14 @@ class UserWindowController:
                 full_name
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
         self.view.load_table(['id', 'Date Added', 'Username', 'Position', 'Full Name'], data)
 
     def search(self):
         search_text = self.view.get_search_text().lower()
         search_terms = search_text.split()
 
-        query = self.session.query(User).join(User.resident)
+        query = self.current_filter.join(User.resident)
 
         if search_terms:
             conditions = []
@@ -1157,7 +1261,9 @@ class UserWindowController:
     
         # Update resident fields
         user.username = updated_data['username']
-        user.password = bcrypt.hash(updated_data['password'])
+        salt = bcrypt.gensalt()
+        password_bytes = updated_data['password'].encode('utf-8')
+        user.password = bcrypt.hashpw(password_bytes, salt)
         user.position = updated_data['position']
         user.resident = resident
     
@@ -1220,24 +1326,48 @@ class UserWindowController:
                     self.session.commit()
                     self.refresh()
 
-class BlotterWindowController:
-    def __init__(self, view : BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
-        self.refresh()
+    def filter_settings(self):
+        filter_form = FilterUserForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()
+
+    def apply_filter(self, form: FilterUserForm):
+        position = form.cbPosition.currentText()
+        query = self.default_filter()
+
+        filters = []
         
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
+        if position and position != "ALL":           
+            query = query.filter(User.position == position)
+            filters.append(f"Position: {position}")
+            
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+                
+        self.current_filter = query.order_by(Household.household_name).order_by(User.id, User.date_added)
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterUserForm):
+        form.cbPosition.setCurrentIndex(0)
+        self.apply_filter(form)
+
+class BlotterWindowController(BaseController):
+    def __init__(self, view : BaseWindow):
+        super().__init__(view)
     
+    def default_filter(self):
+        return self.session.query(Blotter).order_by(desc(Blotter.record_date))
+            
     def refresh(self):
         self.view.set_search_text('')
-        blotters = self.session.query(Blotter).order_by(desc(Blotter.record_date)).all()
+        blotters = self.current_filter.all()
         data = []
         for blotter in blotters:
             result = [
@@ -1249,7 +1379,7 @@ class BlotterWindowController:
                 str(blotter.full_report)[:20]
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}")      
         self.view.load_table(['id', 'Record Date', 'Complainant', 'Respondent', 'Status','Report'], data)
     
     def search(self):
@@ -1257,7 +1387,7 @@ class BlotterWindowController:
         search_terms = search_text.split() 
         
         # Base query
-        query = self.session.query(Blotter)
+        query = self.current_filter
         
         # Apply AND of ORs: each term must match one of the fields
         if search_terms:
@@ -1458,25 +1588,65 @@ class BlotterWindowController:
                     self.session.delete(blotter)
                     self.session.commit()
                     self.refresh()
-                    
-class CertificateWindowController:
-    def __init__(self, view: BaseWindow):
-        self.db = Database()
-        self.session = self.db.get_session()
-        self.view = view
+    
+    def filter_settings(self):
+        filter_form = FilterBlotterForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()                   
+
+    def apply_filter(self, form: FilterBlotterForm):
+        status = form.cbStatus.currentText()
+        start_date = form.tbStartRecordDate.date().toPython()
+        end_date = form.tbEndRecordDate.date().toPython()
+
+        query = self.default_filter()
+        filters = []
+
+        # Apply status filter if not "ALL"
+        if status and status != "ALL":
+            query = query.filter(Blotter.status == status)
+            filters.append(f"Status: {status}")
+
+        # Apply date range filter if dates are valid
+        if start_date and end_date:
+            if start_date < end_date:
+                query = query.filter(Blotter.record_date.between(start_date, end_date))
+                filters.append(f"Date Range: {start_date} to {end_date}")
+            else:
+                QMessageBox.warning(form, "Invalid Date Range", "Start date must be before or equal to end date")
+                return
+
+        # Update filter label
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+
+        self.current_filter = query.order_by(desc(Blotter.record_date))
         self.refresh()
-        
-        self.view.btRefresh.clicked.connect(self.refresh)
-        self.view.btSearch.clicked.connect(self.search)
-        self.view.tbSearchBar.returnPressed.connect(self.search)
-        self.view.btAdd.clicked.connect(self.add)
-        self.view.btEdit.clicked.connect(self.edit)
-        self.view.btDelete.clicked.connect(self.delete)
-        self.view.btBrowse.clicked.connect(self.browse)
+        form.accept()
+
+    def clear_filter(self, form: FilterUserForm):
+        # Reset all filter controls to default values
+        form.cbStatus.setCurrentIndex(0)
+        form.tbStartRecordDate.setDate(QDate.currentDate())
+        form.tbEndRecordDate.setDate(QDate.currentDate())
+        self.apply_filter(form)
+
+class CertificateWindowController(BaseController):
+    def __init__(self, view : BaseWindow):
+        super().__init__(view)
+    
+    def default_filter(self):
+        return self.session.query(Certificate).outerjoin(Certificate.resident).order_by(desc(Certificate.date_issued))
     
     def refresh(self):
         self.view.set_search_text('')
-        certificates = self.session.query(Certificate).join(Certificate.resident).order_by(desc(Certificate.date_issued)).all()
+        certificates = self.current_filter.all()
         data = []
         for certificate in certificates:
             resident = certificate.resident 
@@ -1500,7 +1670,7 @@ class CertificateWindowController:
                 purpose
             ]
             data.append(result)
-        
+        self.view.lbTotal.setText(f"Total: {len(data)}") 
         self.view.load_table(['id', 'Date Issued', 'Type', 'Resident', 'Purpose'], data)
         
     def search(self):
@@ -1508,7 +1678,7 @@ class CertificateWindowController:
         search_terms = search_text.split()
     
         # Start with base query and join household
-        query = self.session.query(Certificate).join(Certificate.resident)
+        query = self.current_filter()
     
         # Apply search filters
         if search_terms:
@@ -1801,10 +1971,28 @@ class CertificateWindowController:
             resident.last_name,
             resident.suffix
         ]))
+        sex = resident.sex
         age = self.calculate_age(resident.date_of_birth)
         date_str = certificate.date_issued.strftime("%dth day of %B, %Y")
         purpose = certificate.purpose
         cert_type = certificate.type
+
+        if sex.upper() == "MALE":
+            pronouns = {
+                "{PRONOUN_SUBJ}": "he",
+                "{PRONOUN_OBJ}": "him",
+                "{PRONOUN_POS}": "his",
+                "{PRONOUN_POS_ADJ}": "his",  # possessive adjective
+                "{PRONOUN_REFLEX}": "himself"
+            }
+        elif sex.upper() == "FEMALE":
+            pronouns = {
+                "{PRONOUN_SUBJ}": "she",
+                "{PRONOUN_OBJ}": "her",
+                "{PRONOUN_POS}": "hers",
+                "{PRONOUN_POS_ADJ}": "her",  # possessive adjective
+                "{PRONOUN_REFLEX}": "herself"
+            }
 
         # Replace placeholders
         replacements = {
@@ -1813,7 +2001,8 @@ class CertificateWindowController:
             "{CIVIL}": resident.civil_status,
             "{CITIZEN}": resident.citizenship,
             "{DATE}": date_str,
-            "{PURPOSE}": purpose
+            "{PURPOSE}": purpose,
+            **pronouns
         }
 
         self.replace_placeholders_in_doc(doc, replacements)
@@ -1897,6 +2086,54 @@ class CertificateWindowController:
                     self.session.commit()
                     self.refresh()
 
+    def filter_settings(self):
+        filter_form = FilterCertificateForm()
+        filter_form.filterbar.btCancel.clicked.connect(lambda: filter_form.reject)
+        filter_form.filterbar.btRevert.clicked.connect(lambda: self.clear_filter(filter_form))
+        filter_form.filterbar.btUpdate.clicked.connect(lambda: self.apply_filter(filter_form))
+               
+        filter_form.exec()
+
+    def apply_filter(self, form: FilterCertificateForm):
+        type = form.cbType.currentText()
+        start_date = form.tbStartRecordDate.date().toPython()
+        end_date = form.tbEndRecordDate.date().toPython()
+
+        query = self.default_filter()
+        filters = []
+
+        # Apply status filter if not "ALL"
+        if type and type != "ALL":
+            query = query.filter(Certificate.type == type)
+            filters.append(f"Type: {type}")
+
+        # Apply date range filter if dates are valid
+        if start_date and end_date:
+            if start_date < end_date:
+                query = query.filter(Blotter.record_date.between(start_date, end_date))
+                filters.append(f"Date Range: {start_date} to {end_date}")
+            else:
+                QMessageBox.warning(form, "Invalid Date Range", "Start date must be before or equal to end date")
+                return
+
+        # Update filter label
+        if filters:
+            filter_text = " | ".join(filters)
+            self.view.lbFilter.setText(f"{filter_text}")
+        else:
+            self.view.lbFilter.setText("No Applied Filter")
+
+        self.current_filter = query.order_by(desc(Blotter.record_date))
+        self.refresh()
+        form.accept()
+
+    def clear_filter(self, form: FilterCertificateForm):
+        # Reset all filter controls to default values
+        form.cbType.setCurrentIndex(0)
+        form.tbStartRecordDate.setDate(QDate.currentDate())
+        form.tbEndRecordDate.setDate(QDate.currentDate())
+        self.apply_filter(form)
+
 class AboutUsWindowController:
     def __init__(self, view: AboutWindow):
         self.db = Database()
@@ -1927,19 +2164,24 @@ class AboutUsWindowController:
 
             user_list.append({'name': full_name, 'position': position})
         
-        custom_order = ["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD", "TANOD"]
+        custom_order = ["CAPTAIN", "SECRETARY", "TREASURER", "KAGAWAD"]
 
         self.view.load_data(
             name = barangay.name,
-            history = barangay.history,
-            mission = barangay.mission,
-            vision = barangay.vision,
+            history = self.sentence_case(barangay.history),
+            mission = self.sentence_case(barangay.mission),
+            vision = self.sentence_case(barangay.vision),
             members = sorted(user_list, key=lambda user: custom_order.index(user['position'].upper()) if user['position'].upper() in custom_order else len(custom_order))
         )
-            
+
+    def sentence_case(self, text: str) -> str:
+        sentences = text.split(". ")
+        return ". ".join(s.strip().capitalize() for s in sentences)
+    
 class SettingsWindowController:
-    def __init__(self, view: SettingsWindow):
+    def __init__(self, view: SettingsWindow, parent: MainController):
         self.view = view
+        self.parent = parent
         self.db = Database()
         self.session = self.db.get_session()
         self.load_data()
@@ -2055,6 +2297,10 @@ class SettingsWindowController:
                 .join(Resident.household)
             )
             df_resident_household = pd.read_sql(stmt_resident_household, self.session.bind)
+            # Add age column
+            if not df_resident_household.empty and "date_of_birth" in df_resident_household.columns:
+                today = pd.Timestamp(datetime.today().date())
+                df_resident_household["age"] = (today - pd.to_datetime(df_resident_household["date_of_birth"])).dt.days // 365
 
             # Export Resident & Certificate data
             stmt_resident_certificate = (
@@ -2072,7 +2318,7 @@ class SettingsWindowController:
             )
             df_resident_certificate = pd.read_sql(stmt_resident_certificate, self.session.bind)
 
-            # Export Blotter data
+            # Export Blotter data (full table)
             stmt_blotter = select(Blotter)
             df_blotter = pd.read_sql(stmt_blotter, self.session.bind)
 
@@ -2107,6 +2353,10 @@ class SettingsWindowController:
                 .join(Resident.household)  
             )
             df_resident_user = pd.read_sql(stmt_resident_user, self.session.bind)
+            # Add age column
+            if not df_resident_user.empty and "date_of_birth" in df_resident_user.columns:
+                today = pd.Timestamp(datetime.today().date())
+                df_resident_user["age"] = (today - pd.to_datetime(df_resident_user["date_of_birth"])).dt.days // 365
 
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
                 df_resident_household.to_excel(writer, sheet_name="RBI", index=False)
@@ -2200,12 +2450,23 @@ class SettingsWindowController:
             db_instance.Session = sessionmaker(bind=db_instance.engine)  # Rebind the session to the new engine
 
             # Notify the user
-            QMessageBox.information(None, "Database Switched", "The database has been replaced successfully.")
+            QMessageBox.information(None, "Database Switched", "The database has been replaced successfully. Please Login Again.")
+            self.parent.force_logout()
 
         except Exception as e:
             # Handle any errors
             QMessageBox.critical(None, "Error", f"Failed to switch databases: {str(e)}")
-    
+
+
+COLOR_PALETTE = [
+    QColor(70, 130, 180),   # Steel blue
+    QColor(220, 60, 60),    # Red
+    QColor(60, 180, 60),    # Green
+    QColor(180, 60, 180),   # Purple
+    QColor(60, 180, 180),   # Cyan
+    QColor(180, 180, 60),   # Yellow
+]
+
 class DashboardWindowController:
     def __init__(self, view: DashboardWindow):
         self.view = view
@@ -2217,17 +2478,51 @@ class DashboardWindowController:
         plot.clear()
         x = list(range(len(categories)))
         width = 0.6
-        bars = pg.BarGraphItem(x=x, height=values, width=width, brush='skyblue')
-        plot.addItem(bars)
-        plot.setTitle(title)
-        plot.getAxis('bottom').setTicks([list(zip(x, categories))])
 
-        # Add value labels on top of bars
+        # Create bars with custom colors
+        color_index = self.view.plot_items.index(plot) % len(COLOR_PALETTE)
+        brush = pg.mkBrush(COLOR_PALETTE[color_index])
+    
+        bars = BarGraphItem(
+            x=x, 
+            height=values, 
+            width=width, 
+            brush=brush,
+            pen=pg.mkPen(QColor(0, 0, 0)))
+        plot.addItem(bars)
+
+        # Configure x-axis with bold black category labels
+        x_axis = plot.getAxis('bottom')
+        x_axis.setTicks([list(zip(x, categories))])
+    
+        # Create bold font for axis labels
+        axis_font = QFont('Arial', 10)
+        axis_font.setBold(True)
+        x_axis.setTickFont(axis_font)
+        x_axis.setTextPen(pg.mkPen(color='black', width=1))
+
+        # Set plot title with bold black font
+        title_font = QFont('Arial', 12)
+        title_font.setBold(True)
+        plot.setTitle(title, color='black', size='12pt')
+    
+        # Access the title label properly and set font
+        title_label = plot.titleLabel
+        title_label.item.setFont(title_font)
+
+        # Add padding and disable interaction
+        plot.setXRange(-0.5, len(categories)-0.5)
+        plot.enableAutoRange(axis='y')
+    
+        # Add bold black value labels
         for i, value in enumerate(values):
-            label = pg.TextItem(html=f"<div style='text-align:center'>{value}</div>", anchor=(0.5, 1))
+            label = TextItem(
+                html=f"<div style='font-weight: bold; color: black; font-size: 12pt'>{value}</div>",
+                anchor=(0.5, 1)
+            )
             label.setPos(x[i], value)
             plot.addItem(label)
-
+            
     def load_data(self):
         # Count of entities
         households = self.session.query(Household).all()
@@ -2258,9 +2553,9 @@ class DashboardWindowController:
         today = pd.Timestamp(datetime.today().date())
         df["age"] = (today - df["date_of_birth"]).dt.days // 365
 
-        bins = [0, 18, 35, 50, 65, 120]
-        labels = ["0-18", "19-35", "36-50", "51-65", "66+"]
-        df["age_range"] = pd.cut(df["age"], bins=bins, labels=labels, right=True)
+        bins = [-float('inf'), 17, 30, 59, float('inf')]
+        labels = ["0-17", "18-30", "31-59", "60+"]
+        df["age_range"] = pd.cut(df["age"], bins=bins, labels=labels, right=False)
 
         age_counts = df["age_range"].value_counts().sort_index()
         categories = age_counts.index.tolist()

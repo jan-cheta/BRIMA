@@ -12,7 +12,7 @@ import sys
 def main():
     app = QApplication([])
     app.setWindowIcon(QIcon(':/login'))
-     # Load QSS
+    # Load QSS
     file = QFile(":/styles")
     if file.open(QFile.ReadOnly | QFile.Text):
         stream = QTextStream(file)
